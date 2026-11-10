@@ -1,0 +1,31 @@
+<%- include('../partials/header') %>
+<div class="container narrow page-pad">
+  <h1><%= team ? 'Редактирование команды' : 'Создание команды' %></h1>
+  <% if (!team) { %>
+    <div class="notice notice-info"><%- icon('info') %><div>Заявка на создание команды проверяется модератором. После одобрения вы сможете добавлять участников и загружать произведения — они тоже проходят модерацию перед публикацией.</div></div>
+  <% } %>
+  <% if (pending) { %>
+    <div class="notice notice-warn"><%- icon('clock') %><div>Заявка «<%= pending.name %>» уже на рассмотрении. Новую можно подать после решения модератора.</div></div>
+  <% } %>
+  <% if (errors.length) { %>
+    <div class="notice notice-error"><%- icon('info') %><ul><% errors.forEach(function (e) { %><li><%= e %></li><% }) %></ul></div>
+  <% } %>
+  <form method="post" enctype="multipart/form-data" action="<%= team ? '/team/' + team.slug + '/edit' : '/teams/new' %>" class="form panel">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <label class="field">
+      <span>Название команды *</span>
+      <input class="input" name="name" value="<%= form.name || '' %>" required minlength="2" maxlength="60">
+    </label>
+    <label class="field">
+      <span>Описание</span>
+      <textarea class="input" name="description" rows="5" maxlength="3000" placeholder="Чем занимается команда, ссылки на ваши ресурсы, набор участников…"><%= form.description || '' %></textarea>
+    </label>
+    <label class="field">
+      <span>Аватар (необязательно)</span>
+      <input class="input" type="file" name="avatar" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" data-image-preview="team-avatar-preview">
+      <img id="team-avatar-preview" class="preview-img small" <% if (team && team.avatar) { %>src="<%= team.avatar %>"<% } else { %>hidden<% } %> alt="">
+    </label>
+    <button class="btn btn-primary" type="submit" <%= pending && !team ? 'disabled' : '' %>><%= team ? 'Сохранить' : 'Отправить заявку' %></button>
+  </form>
+</div>
+<%- include('../partials/footer') %>

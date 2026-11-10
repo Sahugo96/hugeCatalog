@@ -1,0 +1,179 @@
+<%- include('partials/header') %>
+<% var w = work; var adult = w.age_rating === '18+'; %>
+
+<% if (adult) { %>
+<div class="age-gate" data-age-gate hidden>
+  <div class="age-gate-box">
+    <div class="age-gate-badge">18+</div>
+    <h2>Контент для взрослых</h2>
+    <p class="muted">Это произведение содержит материалы, предназначенные только для лиц старше 18 лет.</p>
+    <div class="row-gap center">
+      <button class="btn btn-primary" data-age-confirm>Мне есть 18</button>
+      <a class="btn btn-ghost" href="/">Уйти</a>
+    </div>
+  </div>
+</div>
+<% } %>
+
+<div class="title-backdrop" style="background-image: url('<%= w.cover || '' %>')"></div>
+
+<div class="container title-page page-pad">
+  <% if (w.moderation !== 'approved') { %>
+    <div class="notice notice-<%= w.moderation === 'rejected' ? 'error' : 'warn' %>">
+      <%- icon('info') %>
+      <div>
+        <% if (w.moderation === 'pending') { %>
+          <strong>На модерации.</strong> Произведение видно только вашей команде и модераторам.
+        <% } else { %>
+          <strong>Отклонено модератором.</strong> Причина: <%= w.reject_reason %>. Исправьте и сохраните — оно снова уйдёт на проверку.
+        <% } %>
+      </div>
+      <% if (isStaff && w.moderation === 'pending') { %>
+        <form method="post" action="/admin/works/<%= w.id %>/approve" class="notice-action">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="back" value="/title/<%= w.slug %>">
+          <button class="btn btn-sm btn-primary"><%- icon('check') %>Одобрить</button>
+        </form>
+      <% } %>
+    </div>
+  <% } %>
+
+  <div class="title-grid">
+    <div class="title-side">
+      <div class="title-cover <%= adult ? 'is-adult' : '' %>">
+        <% if (w.cover) { %><img src="<%= w.cover %>" alt="Обложка: <%= w.title %>"><% } else { %><div class="cover-placeholder"><%- icon('book') %></div><% } %>
+      </div>
+      <div class="title-actions">
+        <% if (lastRead) { %>
+          <a class="btn btn-primary btn-block" href="/title/<%= w.slug %>/chapter/<%= lastRead.id %>"><%- icon('book') %>Продолжить: гл. <%= util.formatChapterNumber(lastRead.number) %></a>
+        <% } else if (firstChapter) { %>
+          <a class="btn btn-primary btn-block" href="/title/<%= w.slug %>/chapter/<%= firstChapter.id %>"><%- icon('book') %>Начать читать</a>
+        <% } else { %>
+          <button class="btn btn-primary btn-block" disabled>Глав пока нет</button>
+        <% } %>
+        <div class="action-pair">
+          <button class="btn btn-ghost toggle-btn <%= state.liked ? 'is-on' : '' %>" data-toggle-action="like" data-work="<%= w.id %>" aria-pressed="<%= state.liked %>" <%= w.moderation !== 'approved' ? 'disabled' : '' %>>
+            <%- icon('heart') %><span data-count><%= util.compactNumber(w.likes_count) %></span>
+          </button>
+          <button class="btn btn-ghost toggle-btn <%= state.favorited ? 'is-on' : '' %>" data-toggle-action="favorite" data-work="<%= w.id %>" aria-pressed="<%= state.favorited %>" <%= w.moderation !== 'approved' ? 'disabled' : '' %>>
+            <%- icon('bookmark') %><span data-label><%= state.favorited ? 'В избранном' : 'В избранное' %></span>
+          </button>
+        </div>
+        <% if (canEdit) { %>
+          <a class="btn btn-ghost btn-block" href="/studio/works/<%= w.id %>"><%- icon('edit') %>Управление</a>
+        <% } %>
+      </div>
+    </div>
+
+    <div class="title-main">
+      <div class="title-head">
+        <div class="title-kicker">
+          <a href="<%= catalogUrl('type', w.type) %>"><%= labelOf(C.TYPES, w.type) %></a>
+          <% if (w.year) { %> · <a href="<%= buildUrl('/catalog', { year_from: w.year, year_to: w.year }) %>"><%= w.year %></a><% } %>
+          · <a href="<%= catalogUrl('status', w.status) %>"><%= labelOf(C.STATUSES, w.status) %></a>
+        </div>
+        <h1 class="title-name"><%= w.title %></h1>
+        <% if (w.alt_titles) { %><div class="title-alt muted"><%= w.alt_titles.split('\n').join(' / ') %></div><% } %>
+      </div>
+
+      <div class="title-stats">
+        <div class="stat"><%- icon('eye') %><strong><%= util.compactNumber(w.views) %></strong><span>просмотров</span></div>
+        <div class="stat"><%- icon('heart') %><strong data-likes-stat><%= util.compactNumber(w.likes_count) %></strong><span>лайков</span></div>
+        <div class="stat"><%- icon('bookmark') %><strong><%= util.compactNumber(w.favs_count) %></strong><span>в избранном</span></div>
+        <div class="stat"><%- icon('list') %><strong><%= w.chapters_count %></strong><span><%= util.plural(w.chapters_count, 'глава', 'главы', 'глав') %></span></div>
+      </div>
+
+      <dl class="info-table">
+        <dt>Автор</dt>
+        <dd><% w.storyAuthors.forEach(function (a, i) { %><%= i ? ', ' : '' %><a href="<%= catalogUrl('author', a.slug) %>"><%= a.name %></a><% }) %></dd>
+        <% if (w.artists.length) { %>
+          <dt>Художник</dt>
+          <dd><% w.artists.forEach(function (a, i) { %><%= i ? ', ' : '' %><a href="<%= catalogUrl('author', a.slug) %>"><%= a.name %></a><% }) %></dd>
+        <% } %>
+        <dt>Тип</dt><dd><a href="<%= catalogUrl('type', w.type) %>"><%= labelOf(C.TYPES, w.type) %></a></dd>
+        <dt>Год начала</dt><dd><% if (w.year) { %><a href="<%= buildUrl('/catalog', { year_from: w.year, year_to: w.year }) %>"><%= w.year %></a><% } else { %>—<% } %></dd>
+        <dt>Статус</dt><dd><a href="<%= catalogUrl('status', w.status) %>"><%= labelOf(C.STATUSES, w.status) %></a></dd>
+        <dt>Язык оригинала</dt><dd><a href="<%= catalogUrl('lang', w.language) %>"><%= labelOf(C.LANGUAGES, w.language) %></a></dd>
+        <dt>Возраст</dt><dd><a href="<%= catalogUrl('age', w.age_rating) %>" class="age-badge age-<%= w.age_rating.replace('+', '') %>"><%= w.age_rating %></a></dd>
+        <% if (w.team_name) { %>
+          <dt>Перевод</dt><dd><a href="/team/<%= w.team_slug %>"><%- icon('users', 'tiny') %><%= w.team_name %></a></dd>
+        <% } %>
+      </dl>
+
+      <div class="taxonomy">
+        <div class="chips">
+          <% w.genres.forEach(function (g) { %><a class="chip chip-genre" href="<%= catalogUrl('genre', g.slug) %>"><%= g.name %></a><% }) %>
+        </div>
+        <% if (w.tags.length) { %>
+          <div class="chips">
+            <% w.tags.forEach(function (t) { %><a class="chip chip-tag" href="<%= catalogUrl('tag', t.slug) %>" title="<%= t.tag_group %>">#<%= t.name %></a><% }) %>
+          </div>
+        <% } %>
+      </div>
+
+      <% if (w.description) { %>
+        <div class="description" data-collapsible>
+          <div class="description-text"><% w.description.split(/\n+/).forEach(function (p) { %><p><%= p %></p><% }) %></div>
+          <button class="link-btn" data-expand hidden>Показать полностью <%- icon('chevronDown', 'small') %></button>
+        </div>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="tabs" data-tabs>
+    <div class="tab-list" role="tablist">
+      <button role="tab" class="tab active" data-tab="chapters" aria-selected="true"><%- icon('list') %>Главы <span class="count-badge"><%= chapters.length %></span></button>
+      <button role="tab" class="tab" data-tab="similar" aria-selected="false"><%- icon('sparkles') %>Похожие</button>
+    </div>
+
+    <section class="tab-panel active" data-panel="chapters" id="chapters" role="tabpanel">
+      <% if (chapters.length) { %>
+        <div class="chapters-toolbar">
+          <div class="input-icon grow">
+            <%- icon('search') %>
+            <input type="search" class="input input-sm" placeholder="Номер или название главы" data-chapter-search aria-label="Поиск главы">
+          </div>
+          <a class="btn btn-ghost btn-sm" href="?order=<%= order === 'DESC' ? 'asc' : 'desc' %>#chapters"><%- icon('sort', order === 'ASC' ? 'flip-y' : '') %><%= order === 'DESC' ? 'Сначала новые' : 'Сначала старые' %></a>
+        </div>
+        <ul class="chapter-list">
+          <% chapters.forEach(function (c) { var isLast = lastRead && lastRead.id === c.id; %>
+            <li data-chapter-text="<%= util.formatChapterNumber(c.number) %> <%= c.title.toLowerCase() %>" class="<%= isLast ? 'is-current' : '' %>">
+              <a href="/title/<%= w.slug %>/chapter/<%= c.id %>">
+                <span class="ch-name">
+                  <% if (c.volume) { %><span class="muted">Том <%= c.volume %></span> <% } %>
+                  Глава <%= util.formatChapterNumber(c.number) %><% if (c.title) { %> <span class="ch-title">— <%= c.title %></span><% } %>
+                  <% if (isLast) { %><span class="badge badge-soft">вы здесь</span><% } %>
+                </span>
+                <span class="ch-meta muted">
+                  <% if (c.team_name) { %><span class="hide-xs"><%= c.team_name %></span><% } %>
+                  <span title="Просмотры"><%- icon('eye', 'tiny') %><%= util.compactNumber(c.views) %></span>
+                  <time datetime="<%= c.created_at %>" title="<%= c.created_at %> UTC"><%= util.formatDate(c.created_at) %></time>
+                </span>
+              </a>
+            </li>
+          <% }) %>
+        </ul>
+      <% } else { %>
+        <div class="empty">Главы ещё не загружены.</div>
+      <% } %>
+    </section>
+
+    <section class="tab-panel" data-panel="similar" role="tabpanel" hidden>
+      <div class="subtabs" data-subtabs>
+        <button class="pill active" data-subtab="taxonomy">По жанрам и тегам</button>
+        <button class="pill" data-subtab="plot">По сюжету</button>
+        <button class="pill" data-subtab="art">По рисовке</button>
+      </div>
+      <% [['taxonomy', 'Нет произведений с похожими жанрами и тегами.'], ['plot', 'Не нашлось тайтлов с похожим сюжетом.'], ['art', 'Не нашлось тайтлов того же художника или со схожей рисовкой.']].forEach(function (pair, i) { var list = similar[pair[0]]; %>
+        <div class="subtab-panel" data-subpanel="<%= pair[0] %>" <%= i ? 'hidden' : '' %>>
+          <% if (list.length) { %>
+            <div class="grid grid-sm"><% list.forEach(function (s) { %><%- include('partials/card', { w: s, rank: null, extra: null }) %><% }) %></div>
+          <% } else { %>
+            <div class="empty"><%= pair[1] %></div>
+          <% } %>
+        </div>
+      <% }) %>
+    </section>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

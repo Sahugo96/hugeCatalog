@@ -1,0 +1,29 @@
+<%
+  // Карточка произведения. Параметры: w, extra (необязательная подпись)
+  var adult = w.age_rating === '18+';
+%>
+<a class="card" href="/title/<%= w.slug %>" title="<%= w.title %>">
+  <div class="card-cover <%= adult ? 'is-adult' : '' %>">
+    <% if (w.cover) { %>
+      <img src="<%= w.cover %>" alt="" loading="lazy" decoding="async">
+    <% } else { %>
+      <div class="cover-placeholder"><%- icon('book') %></div>
+    <% } %>
+    <span class="badge badge-type"><%= labelOf(C.TYPES, w.type) %></span>
+    <% if (adult) { %><span class="badge badge-adult">18+</span><% } %>
+    <% if (typeof rank !== 'undefined' && rank) { %><span class="card-rank"><%= rank %></span><% } %>
+  </div>
+  <div class="card-body">
+    <div class="card-title"><%= w.title %></div>
+    <div class="card-meta">
+      <% if (typeof extra !== 'undefined' && extra) { %>
+        <span><%= extra %></span>
+      <% } else { %>
+        <span><%= w.year || '—' %></span>
+        <span class="dot"></span>
+        <span title="Просмотры"><%- icon('eye', 'tiny') %><%= util.compactNumber(w.views) %></span>
+        <span title="Лайки"><%- icon('heart', 'tiny') %><%= util.compactNumber(w.likes_count) %></span>
+      <% } %>
+    </div>
+  </div>
+</a>

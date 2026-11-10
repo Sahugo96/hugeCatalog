@@ -1,0 +1,43 @@
+<%- include('../partials/header') %>
+<div class="container auth-wrap page-pad">
+  <div class="auth-card">
+    <h1>Регистрация</h1>
+    <p class="muted">Уже есть аккаунт? <a href="/login">Войдите</a>.</p>
+    <% if (errors.length) { %>
+      <div class="notice notice-error"><%- icon('info') %><ul><% errors.forEach(function (e) { %><li><%= e %></li><% }) %></ul></div>
+    <% } %>
+    <form method="post" action="/register" class="form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <label class="field">
+        <span>Имя пользователя</span>
+        <input class="input" name="username" value="<%= form.username || '' %>" required minlength="3" maxlength="24" pattern="[A-Za-zА-Яа-яЁё0-9_.\-]{3,24}" autocomplete="username" autofocus>
+        <small class="muted">3–24 символа: буквы, цифры, «_», «.», «-»</small>
+      </label>
+      <label class="field">
+        <span>E-mail</span>
+        <input class="input" type="email" name="email" value="<%= form.email || '' %>" required autocomplete="email">
+      </label>
+      <div class="field-row">
+        <label class="field">
+          <span>Пароль</span>
+          <input class="input" type="password" name="password" required minlength="8" autocomplete="new-password">
+        </label>
+        <label class="field">
+          <span>Повторите пароль</span>
+          <input class="input" type="password" name="password2" required minlength="8" autocomplete="new-password">
+        </label>
+      </div>
+      <label class="check">
+        <input type="checkbox" name="agree" value="1" required>
+        <span>Я принимаю <a href="/privacy" target="_blank">политику конфиденциальности</a> и <a href="/about#rules" target="_blank">правила сайта</a></span>
+      </label>
+      <button class="btn btn-primary btn-block" type="submit">Создать аккаунт</button>
+    </form>
+    <div class="auth-perks">
+      <div><%- icon('heart') %>Лайки и избранное</div>
+      <div><%- icon('bookmark') %>«Продолжить чтение»</div>
+      <div><%- icon('users') %>Своя команда переводчиков</div>
+    </div>
+  </div>
+</div>
+<%- include('../partials/footer') %>

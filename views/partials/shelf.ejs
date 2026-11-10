@@ -1,0 +1,23 @@
+<%
+  // Горизонтальная полка карточек. Параметры: id, heading, iconName, items, link, note, ranked, emptyText
+%>
+<section class="section" id="<%= id %>">
+  <div class="section-head">
+    <h2><%- icon(iconName) %><%= heading %></h2>
+    <% if (typeof link !== 'undefined' && link) { %><a class="section-link" href="<%= link %>">Все <%- icon('chevronRight', 'small') %></a><% } %>
+  </div>
+  <% if (typeof note !== 'undefined' && note) { %><p class="section-note muted"><%= note %></p><% } %>
+  <% if (items.length) { %>
+    <div class="shelf" data-shelf>
+      <button class="shelf-btn shelf-prev" aria-label="Назад" data-shelf-prev><%- icon('chevronLeft') %></button>
+      <div class="shelf-track">
+        <% items.forEach(function (w, i) { %>
+          <%- include('card', { w: w, rank: (typeof ranked !== 'undefined' && ranked) ? i + 1 : null, extra: null }) %>
+        <% }) %>
+      </div>
+      <button class="shelf-btn shelf-next" aria-label="Вперёд" data-shelf-next><%- icon('chevronRight') %></button>
+    </div>
+  <% } else { %>
+    <div class="empty"><%= typeof emptyText !== 'undefined' && emptyText ? emptyText : 'Пока здесь пусто.' %></div>
+  <% } %>
+</section>

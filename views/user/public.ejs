@@ -1,0 +1,22 @@
+<%- include('../partials/header') %>
+<div class="container page-pad">
+  <div class="profile-head">
+    <span class="avatar avatar-lg"><%= profile.username.slice(0, 1).toUpperCase() %></span>
+    <div>
+      <h1><%= profile.username %></h1>
+      <p class="muted">С нами с <%= util.formatDate(profile.created_at) %><% if (profile.role !== 'user') { %> · <%= labelOf(C.ROLES, profile.role) %><% } %></p>
+    </div>
+  </div>
+  <% if (profile.about) { %><div class="prose"><p><%= profile.about %></p></div><% } %>
+  <% if (teams.length) { %>
+    <h2 class="h3">Команды</h2>
+    <div class="chips"><% teams.forEach(function (t) { %><a class="chip" href="/team/<%= t.slug %>"><%= t.name %><%= t.role === 'owner' ? ' ★' : '' %></a><% }) %></div>
+  <% } %>
+  <section class="section">
+    <div class="section-head"><h2><%- icon('bookmark') %>Избранное</h2></div>
+    <% if (favorites.length) { %>
+      <div class="grid"><% favorites.forEach(function (w) { %><%- include('../partials/card', { w: w, rank: null, extra: null }) %><% }) %></div>
+    <% } else { %><div class="empty">Пока ничего.</div><% } %>
+  </section>
+</div>
+<%- include('../partials/footer') %>

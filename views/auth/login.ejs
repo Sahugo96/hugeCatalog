@@ -1,0 +1,21 @@
+<%- include('../partials/header') %>
+<div class="container auth-wrap page-pad">
+  <div class="auth-card">
+    <h1>Вход</h1>
+    <p class="muted">Рады видеть снова! Нет аккаунта? <a href="/register">Зарегистрируйтесь</a>.</p>
+    <% if (error) { %><div class="notice notice-error"><%- icon('info') %><div><%= error %></div></div><% } %>
+    <form method="post" action="/login" class="form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <label class="field">
+        <span>Имя пользователя или e-mail</span>
+        <input class="input" name="login" value="<%= form.login || '' %>" required autocomplete="username" autofocus>
+      </label>
+      <label class="field">
+        <span>Пароль</span>
+        <input class="input" type="password" name="password" required autocomplete="current-password">
+      </label>
+      <button class="btn btn-primary btn-block" type="submit">Войти</button>
+    </form>
+  </div>
+</div>
+<%- include('../partials/footer') %>

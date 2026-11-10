@@ -1,0 +1,23 @@
+{
+  "name": "hugecatalog",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Каталог манги, манхвы и маньхуа с командами переводчиков, модерацией и читалкой",
+  "main": "server.js",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning server.js",
+    "dev": "node --disable-warning=ExperimentalWarning --watch server.js",
+    "seed:demo": "node --disable-warning=ExperimentalWarning scripts/seed-demo.js",
+    "test": "node --disable-warning=ExperimentalWarning --test test/*.test.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "ejs": "^3.1.10",
+    "express": "^5.3.0",
+    "express-session": "^1.19.0",
+    "multer": "^2.5.0"
+  }
+}

@@ -1,0 +1,56 @@
+<%- include('../partials/header') %>
+<% var w = work; %>
+<div class="container page-pad">
+  <div class="breadcrumbs"><a href="/studio">Студия</a> / <span><%= w.title %></span></div>
+  <div class="studio-work-head">
+    <img class="studio-cover" src="<%= w.cover %>" alt="">
+    <div class="grow">
+      <h1><%= w.title %></h1>
+      <p class="muted"><%= labelOf(C.TYPES, w.type) %><%= w.year ? ' · ' + w.year : '' %> · <%= labelOf(C.LANGUAGES, w.language) %> · <%= w.age_rating %><%= w.team_name ? ' · ' + w.team_name : '' %></p>
+      <p>
+        <span class="status status-<%= w.moderation %>"><%= { pending: 'на модерации', approved: 'опубликован', rejected: 'отклонён' }[w.moderation] %></span>
+        <% if (w.moderation === 'rejected') { %><span class="small">Причина: <%= w.reject_reason %>. Исправьте данные и сохраните — тайтл снова уйдёт на проверку.</span><% } %>
+      </p>
+      <div class="row-gap">
+        <a class="btn btn-primary btn-sm" href="/studio/works/<%= w.id %>/chapters/new"><%- icon('upload') %>Загрузить главу</a>
+        <a class="btn btn-ghost btn-sm" href="/studio/works/<%= w.id %>/edit"><%- icon('edit') %>Редактировать</a>
+        <a class="btn btn-ghost btn-sm" href="/title/<%= w.slug %>"><%- icon('eye') %>Страница тайтла</a>
+        <form method="post" action="/studio/works/<%= w.id %>/delete" data-confirm="Удалить тайтл «<%= w.title %>» со всеми главами? Это действие нельзя отменить.">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button class="btn btn-danger btn-sm"><%- icon('trash') %>Удалить</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <section class="section" id="chapters">
+    <div class="section-head"><h2><%- icon('list') %>Главы (<%= chapters.length %>)</h2></div>
+    <% if (chapters.length) { %>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Глава</th><th class="hide-sm">Команда</th><th class="hide-sm">Стр.</th><th>Дата</th><th></th></tr></thead>
+          <tbody>
+            <% chapters.forEach(function (c) { %>
+              <tr>
+                <td><a href="/title/<%= w.slug %>/chapter/<%= c.id %>"><%= c.volume ? 'Т. ' + c.volume + ' ' : '' %>Гл. <%= util.formatChapterNumber(c.number) %></a><% if (c.title) { %> <span class="muted">— <%= c.title %></span><% } %></td>
+                <td class="hide-sm"><%= c.team_name || '—' %></td>
+                <td class="hide-sm"><%= c.pages_count %></td>
+                <td class="nowrap"><%= util.formatDate(c.created_at) %></td>
+                <td class="table-actions">
+                  <a class="icon-btn small" href="/studio/chapters/<%= c.id %>/edit" title="Редактировать" aria-label="Редактировать"><%- icon('edit') %></a>
+                  <form method="post" action="/studio/chapters/<%= c.id %>/delete" data-confirm="Удалить главу <%= util.formatChapterNumber(c.number) %>?">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <button class="icon-btn small danger" title="Удалить" aria-label="Удалить"><%- icon('trash') %></button>
+                  </form>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } else { %>
+      <div class="empty empty-lg"><%- icon('upload') %><p>Глав пока нет.</p><a class="btn btn-primary" href="/studio/works/<%= w.id %>/chapters/new">Загрузить первую главу</a></div>
+    <% } %>
+  </section>
+</div>
+<%- include('../partials/footer') %>

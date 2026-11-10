@@ -1,0 +1,37 @@
+<%- include('../partials/header') %>
+<div class="container page-pad">
+  <h1>Пользователи</h1>
+  <%- include('../partials/admin-nav') %>
+  <form class="inline-form" method="get"><input class="input input-sm" type="search" name="q" value="<%= search %>" placeholder="Имя или e-mail"><button class="btn btn-ghost btn-sm">Найти</button></form>
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>Пользователь</th><th class="hide-sm">E-mail</th><th class="hide-sm">Дата</th><th>Роль</th><th></th></tr></thead>
+      <tbody>
+        <% users.forEach(function (u) { %>
+          <tr class="<%= u.is_banned ? 'row-banned' : '' %>">
+            <td><a href="/user/<%= encodeURIComponent(u.username) %>"><%= u.username %></a><% if (u.is_banned) { %> <span class="status status-rejected">заблокирован</span><% } %></td>
+            <td class="hide-sm"><%= u.email %></td>
+            <td class="hide-sm nowrap"><%= util.formatDate(u.created_at) %></td>
+            <td>
+              <form method="post" action="/admin/users/<%= u.id %>/role" class="inline-form">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="q" value="<%= search %>">
+                <select class="input input-sm select" name="role" data-autosubmit>
+                  <% C.ROLES.forEach(function (r) { %><option value="<%= r.value %>" <%= u.role === r.value ? 'selected' : '' %>><%= r.label %></option><% }) %>
+                </select>
+              </form>
+            </td>
+            <td class="table-actions">
+              <% if (u.id !== user.id) { %>
+                <form method="post" action="/admin/users/<%= u.id %>/ban" data-confirm="<%= u.is_banned ? 'Разблокировать' : 'Заблокировать' %> <%= u.username %>?">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="q" value="<%= search %>">
+                  <button class="btn btn-sm <%= u.is_banned ? 'btn-ghost' : 'btn-danger' %>"><%= u.is_banned ? 'Разблокировать' : 'Заблокировать' %></button>
+                </form>
+              <% } %>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+<%- include('../partials/footer') %>

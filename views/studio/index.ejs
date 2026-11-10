@@ -1,0 +1,59 @@
+<%- include('../partials/header') %>
+<div class="container page-pad">
+  <div class="page-head">
+    <div>
+      <h1>Студия</h1>
+      <p class="muted">Загрузка и управление тайтлами ваших команд.</p>
+    </div>
+    <% if (canUpload) { %><a href="/studio/works/new" class="btn btn-primary"><%- icon('plus') %>Добавить тайтл</a><% } %>
+  </div>
+
+  <% if (!canUpload) { %>
+    <div class="onboarding">
+      <h2>Как начать публиковать</h2>
+      <ol class="steps">
+        <li class="<%= pendingTeam ? 'done' : '' %>"><strong>Создайте команду</strong> —
+          <% if (pendingTeam) { %>заявка подана: <a href="/team/<%= pendingTeam.slug %>"><%= pendingTeam.name %></a><% } else { %><a href="/teams/new">подать заявку</a><% } %>
+        </li>
+        <li><strong>Дождитесь одобрения</strong> модератором
+          <% if (pendingTeam && pendingTeam.status === 'pending') { %><span class="status status-pending">на рассмотрении</span><% } %>
+          <% if (pendingTeam && pendingTeam.status === 'rejected') { %><span class="status status-rejected">отклонена: <%= pendingTeam.reject_reason %></span><% } %>
+        </li>
+        <li><strong>Добавляйте тайтлы и главы</strong> — новые тайтлы публикуются после проверки.</li>
+      </ol>
+      <% if (!pendingTeam) { %><a href="/teams/new" class="btn btn-primary"><%- icon('users') %>Создать команду</a><% } %>
+    </div>
+  <% } %>
+
+  <% if (works.length) { %>
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Тайтл</th><th class="hide-sm">Команда</th><th>Статус</th><th class="hide-sm">Глав</th><th></th></tr></thead>
+        <tbody>
+          <% works.forEach(function (w) { %>
+            <tr>
+              <td>
+                <a class="table-title" href="/studio/works/<%= w.id %>">
+                  <img src="<%= w.cover %>" alt="" loading="lazy"><span><strong><%= w.title %></strong><span class="muted small"><%= labelOf(C.TYPES, w.type) %><%= w.year ? ' · ' + w.year : '' %></span></span>
+                </a>
+              </td>
+              <td class="hide-sm"><%= w.team_name || '—' %></td>
+              <td>
+                <span class="status status-<%= w.moderation %>"><%= { pending: 'на модерации', approved: 'опубликован', rejected: 'отклонён' }[w.moderation] %></span>
+                <% if (w.moderation === 'rejected' && w.reject_reason) { %><div class="small muted">Причина: <%= w.reject_reason %></div><% } %>
+              </td>
+              <td class="hide-sm"><%= w.chapters_count %></td>
+              <td class="table-actions">
+                <a class="btn btn-ghost btn-sm" href="/studio/works/<%= w.id %>/chapters/new"><%- icon('upload') %><span class="hide-sm">Глава</span></a>
+                <a class="btn btn-ghost btn-sm" href="/studio/works/<%= w.id %>"><%- icon('settings') %></a>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } else if (canUpload) { %>
+    <div class="empty empty-lg"><%- icon('upload') %><p>Тайтлов пока нет. Добавьте первый!</p><a href="/studio/works/new" class="btn btn-primary">Добавить тайтл</a></div>
+  <% } %>
+</div>
+<%- include('../partials/footer') %>

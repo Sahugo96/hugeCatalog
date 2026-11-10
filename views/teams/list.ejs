@@ -1,0 +1,27 @@
+<%- include('../partials/header') %>
+<div class="container page-pad">
+  <div class="page-head">
+    <div>
+      <h1>Команды</h1>
+      <p class="muted">Переводчики и сканлейтеры, публикующие произведения на сайте.</p>
+    </div>
+    <a href="/teams/new" class="btn btn-primary"><%- icon('plus') %>Создать команду</a>
+  </div>
+  <% if (teams.length) { %>
+    <div class="team-grid">
+      <% teams.forEach(function (t) { %>
+        <a class="team-card" href="/team/<%= t.slug %>">
+          <span class="team-avatar"><% if (t.avatar) { %><img src="<%= t.avatar %>" alt=""><% } else { %><%= t.name.slice(0, 1).toUpperCase() %><% } %></span>
+          <span class="team-card-body">
+            <strong><%= t.name %></strong>
+            <span class="muted"><%= t.works_count %> <%= util.plural(t.works_count, 'тайтл', 'тайтла', 'тайтлов') %> · <%= t.members_count %> <%= util.plural(t.members_count, 'участник', 'участника', 'участников') %></span>
+            <% if (t.description) { %><span class="team-desc"><%= t.description.slice(0, 140) %><%= t.description.length > 140 ? '…' : '' %></span><% } %>
+          </span>
+        </a>
+      <% }) %>
+    </div>
+  <% } else { %>
+    <div class="empty empty-lg"><%- icon('users') %><p>Пока нет ни одной команды. Станьте первыми!</p></div>
+  <% } %>
+</div>
+<%- include('../partials/footer') %>

@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title ? title + ' — ' + SITE_NAME : SITE_NAME + ' — каталог манги, манхвы и маньхуа' %></title>
+  <meta name="description" content="<%= description || 'Читайте мангу, манхву и маньхуа онлайн. Удобный каталог с фильтрами, свежие главы каждый день.' %>">
+  <meta property="og:site_name" content="<%= SITE_NAME %>">
+  <meta property="og:title" content="<%= title || SITE_NAME %>">
+  <% if (typeof ogImage !== 'undefined' && ogImage) { %><meta property="og:image" content="<%= ogImage %>"><% } %>
+  <meta name="csrf-token" content="<%= csrfToken %>">
+  <meta name="color-scheme" content="light dark">
+  <link rel="icon" href="/static/img/favicon.svg" type="image/svg+xml">
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('theme');
+        if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="stylesheet" href="/static/css/style.css?v=<%= assetVersion %>">
+  <script src="/static/js/app.js?v=<%= assetVersion %>" defer></script>
+</head>
+<body class="<%= typeof bodyClass !== 'undefined' ? bodyClass : '' %>" data-auth="<%= user ? '1' : '0' %>">
+<% if (typeof bodyClass === 'undefined' || bodyClass !== 'reader-page') { %>
+<a class="skip-link" href="#main">Перейти к содержимому</a>
+<header class="site-header">
+  <div class="container header-inner">
+    <button class="icon-btn only-mobile" data-toggle="nav" aria-label="Меню" aria-expanded="false"><%- icon('menu') %></button>
+    <a href="/" class="logo" aria-label="<%= SITE_NAME %> — на главную">
+      <span class="logo-mark">H</span><span class="logo-text"><%= SITE_NAME %></span>
+    </a>
+    <nav class="main-nav" id="main-nav" aria-label="Основное меню">
+      <a href="/catalog" class="<%= currentPath.startsWith('/catalog') ? 'active' : '' %>"><%- icon('layers') %>Каталог</a>
+      <a href="/catalog?sort=updated" class=""><%- icon('clock') %>Обновления</a>
+      <a href="/teams" class="<%= currentPath.startsWith('/team') ? 'active' : '' %>"><%- icon('users') %>Команды</a>
+      <a href="/random" rel="nofollow"><%- icon('shuffle') %>Случайное</a>
+      <% if (user) { %>
+        <a href="/studio" class="<%= currentPath.startsWith('/studio') ? 'active' : '' %>"><%- icon('upload') %>Студия</a>
+      <% } %>
+    </nav>
+    <form class="header-search" action="/catalog" method="get" role="search" autocomplete="off">
+      <span class="header-search-icon"><%- icon('search') %></span>
+      <input type="search" name="q" placeholder="Поиск тайтлов и авторов…" aria-label="Поиск" data-quick-search value="<%= currentPath === '/catalog' && typeof filters !== 'undefined' ? filters.q : '' %>">
+      <div class="search-dropdown" hidden></div>
+    </form>
+    <div class="header-actions">
+      <button class="icon-btn only-mobile" data-toggle="search" aria-label="Поиск"><%- icon('search') %></button>
+      <button class="icon-btn theme-toggle" data-theme-toggle aria-label="Переключить тему" title="Дневная / ночная тема">
+        <span class="theme-icon-light"><%- icon('sun') %></span><span class="theme-icon-dark"><%- icon('moon') %></span>
+      </button>
+      <% if (user) { %>
+        <div class="dropdown">
+          <button class="user-btn" data-dropdown aria-haspopup="true" aria-expanded="false">
+            <span class="avatar"><%= user.username.slice(0, 1).toUpperCase() %></span>
+            <span class="user-name"><%= user.username %></span><%- icon('chevronDown', 'small') %>
+          </button>
+          <div class="dropdown-menu" role="menu">
+            <a href="/profile" role="menuitem"><%- icon('bookmark') %>Избранное и история</a>
+            <a href="/studio" role="menuitem"><%- icon('upload') %>Студия</a>
+            <% if (myTeams.length) { %>
+              <div class="dropdown-label">Мои команды</div>
+              <% myTeams.forEach(function (t) { %><a href="/team/<%= t.slug %>" role="menuitem"><%- icon('users') %><%= t.name %></a><% }) %>
+            <% } else { %>
+              <a href="/teams/new" role="menuitem"><%- icon('plus') %>Создать команду</a>
+            <% } %>
+            <% if (isStaff) { %><a href="/admin" role="menuitem"><%- icon('shield') %>Админ-панель</a><% } %>
+            <a href="/settings" role="menuitem"><%- icon('settings') %>Настройки</a>
+            <form action="/logout" method="post">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <button type="submit" role="menuitem"><%- icon('logout') %>Выйти</button>
+            </form>
+          </div>
+        </div>
+      <% } else { %>
+        <a href="/login" class="btn btn-ghost btn-sm hide-xs">Войти</a>
+        <a href="/register" class="btn btn-primary btn-sm">Регистрация</a>
+      <% } %>
+    </div>
+  </div>
+</header>
+<div class="nav-backdrop" data-close-nav></div>
+<% } %>
+<% if (flash && flash.length) { %>
+  <div class="flash-stack" role="status">
+    <% flash.forEach(function (f) { %>
+      <div class="flash flash-<%= f.type %>"><span><%= f.message %></span><button class="flash-close" aria-label="Закрыть">&times;</button></div>
+    <% }) %>
+  </div>
+<% } %>
+<main id="main">

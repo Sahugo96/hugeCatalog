@@ -1,0 +1,76 @@
+<%- include('../partials/header') %>
+<div class="container page-pad">
+  <% if (team.status !== 'approved') { %>
+    <div class="notice notice-<%= team.status === 'rejected' ? 'error' : 'warn' %>">
+      <%- icon(team.status === 'rejected' ? 'info' : 'clock') %>
+      <div>
+        <% if (team.status === 'pending') { %><strong>Заявка на модерации.</strong> Команда появится в списке после одобрения.<% } %>
+        <% if (team.status === 'rejected') { %><strong>Заявка отклонена.</strong> Причина: <%= team.reject_reason %>. Отредактируйте данные — заявка будет подана повторно.<% } %>
+      </div>
+      <% if (isStaff && team.status === 'pending') { %>
+        <form method="post" action="/admin/teams/<%= team.id %>/approve" class="notice-action">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button class="btn btn-sm btn-primary"><%- icon('check') %>Одобрить</button>
+        </form>
+      <% } %>
+    </div>
+  <% } %>
+
+  <div class="team-head">
+    <span class="team-avatar team-avatar-lg"><% if (team.avatar) { %><img src="<%= team.avatar %>" alt=""><% } else { %><%= team.name.slice(0, 1).toUpperCase() %><% } %></span>
+    <div class="grow">
+      <h1><%= team.name %></h1>
+      <p class="muted"><%= works.length %> <%= util.plural(works.length, 'тайтл', 'тайтла', 'тайтлов') %> · <%= chaptersCount %> <%= util.plural(chaptersCount, 'глава', 'главы', 'глав') %> · с <%= util.formatDate(team.created_at) %></p>
+    </div>
+    <div class="row-gap">
+      <% if (team.myRole && team.status === 'approved') { %><a class="btn btn-primary btn-sm" href="/studio/works/new?team=<%= team.id %>"><%- icon('upload') %>Добавить тайтл</a><% } %>
+      <% if (team.isOwner || isStaff) { %><a class="btn btn-ghost btn-sm" href="/team/<%= team.slug %>/edit"><%- icon('edit') %>Изменить</a><% } %>
+      <% if (team.myRole === 'member') { %>
+        <form method="post" action="/team/<%= team.slug %>/leave" data-confirm="Покинуть команду?">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-ghost btn-sm">Покинуть</button>
+        </form>
+      <% } %>
+      <% if ((team.isOwner && team.status !== 'approved') || isStaff) { %>
+        <form method="post" action="/team/<%= team.slug %>/delete" data-confirm="Удалить команду безвозвратно?">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-danger btn-sm"><%- icon('trash') %>Удалить</button>
+        </form>
+      <% } %>
+    </div>
+  </div>
+  <% if (team.description) { %><div class="prose"><% team.description.split(/\n+/).forEach(function (p) { %><p><%= p %></p><% }) %></div><% } %>
+
+  <div class="team-layout">
+    <section class="section">
+      <div class="section-head"><h2><%- icon('book') %>Тайтлы команды</h2><% if (works.length) { %><a class="section-link" href="<%= catalogUrl('team', team.slug) %>">В каталоге <%- icon('chevronRight', 'small') %></a><% } %></div>
+      <% if (works.length) { %>
+        <div class="grid grid-sm"><% works.forEach(function (w) { %><%- include('../partials/card', { w: w, rank: null, extra: null }) %><% }) %></div>
+      <% } else { %><div class="empty">Опубликованных тайтлов пока нет.</div><% } %>
+    </section>
+
+    <aside class="section" id="members">
+      <div class="section-head"><h2><%- icon('users') %>Участники</h2></div>
+      <ul class="member-list">
+        <% members.forEach(function (m) { %>
+          <li>
+            <a href="/user/<%= encodeURIComponent(m.username) %>"><span class="avatar"><%= m.username.slice(0, 1).toUpperCase() %></span><%= m.username %></a>
+            <span class="muted small"><%= m.role === 'owner' ? 'владелец' : 'участник' %></span>
+            <% if ((team.isOwner || isStaff) && m.role !== 'owner') { %>
+              <form method="post" action="/team/<%= team.slug %>/members/<%= m.id %>/remove" data-confirm="Исключить <%= m.username %> из команды?">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <button class="icon-btn small" aria-label="Исключить" title="Исключить"><%- icon('x') %></button>
+              </form>
+            <% } %>
+          </li>
+        <% }) %>
+      </ul>
+      <% if (team.isOwner || isStaff) { %>
+        <form method="post" action="/team/<%= team.slug %>/members" class="inline-form">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <input class="input input-sm" name="username" placeholder="Имя пользователя" required>
+          <button class="btn btn-primary btn-sm"><%- icon('plus') %>Добавить</button>
+        </form>
+      <% } %>
+    </aside>
+  </div>
+</div>
+<%- include('../partials/footer') %>

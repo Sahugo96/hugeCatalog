@@ -1,0 +1,48 @@
+<%- include('../partials/header') %>
+<div class="container page-pad">
+  <h1>Модерация тайтлов</h1>
+  <%- include('../partials/admin-nav') %>
+  <div class="toolbar-row">
+    <div class="pills">
+      <a class="pill <%= status === 'pending' ? 'active' : '' %>" href="?status=pending">Ожидают</a>
+      <a class="pill <%= status === 'approved' ? 'active' : '' %>" href="?status=approved">Опубликованные</a>
+      <a class="pill <%= status === 'rejected' ? 'active' : '' %>" href="?status=rejected">Отклонённые</a>
+    </div>
+    <form class="inline-form" method="get">
+      <input type="hidden" name="status" value="<%= status %>">
+      <input class="input input-sm" type="search" name="q" value="<%= search %>" placeholder="Поиск">
+    </form>
+  </div>
+  <% if (!works.length) { %><div class="empty empty-lg"><%- icon('check') %><p>Здесь пусто.</p></div><% } %>
+  <div class="mod-list">
+    <% works.forEach(function (w) { %>
+      <article class="mod-item">
+        <a href="/title/<%= w.slug %>" class="mod-cover"><img src="<%= w.cover %>" alt="" loading="lazy"></a>
+        <div class="grow">
+          <h3><a href="/title/<%= w.slug %>"><%= w.title %></a></h3>
+          <p class="muted small">
+            <%= labelOf(C.TYPES, w.type) %> · <%= w.year || 'год не указан' %> · <%= labelOf(C.LANGUAGES, w.language) %> · <%= w.age_rating %> · <%= w.chapters_count %> гл.
+            <br>Команда: <%= w.team_name || '—' %> · загрузил: <%= w.uploader_name || '—' %> · <%= util.timeAgo(w.created_at) %>
+          </p>
+          <div class="chips"><% w.genres.forEach(function (g) { %><span class="chip"><%= g.name %></span><% }) %></div>
+          <% if (w.description) { %><p class="mod-desc"><%= w.description.slice(0, 400) %><%= w.description.length > 400 ? '…' : '' %></p><% } %>
+          <% if (w.reject_reason) { %><p class="small">Причина отказа: <%= w.reject_reason %></p><% } %>
+        </div>
+        <div class="mod-actions">
+          <a class="btn btn-ghost btn-sm" href="/studio/works/<%= w.id %>/edit"><%- icon('edit') %>Править</a>
+          <% if (w.moderation !== 'approved') { %>
+            <form method="post" action="/admin/works/<%= w.id %>/approve"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-primary btn-sm"><%- icon('check') %>Опубликовать</button></form>
+          <% } %>
+          <% if (w.moderation !== 'rejected') { %>
+            <form method="post" action="/admin/works/<%= w.id %>/reject" class="reject-form">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <input class="input input-sm" name="reason" placeholder="Причина" required>
+              <button class="btn btn-danger btn-sm"><%= w.moderation === 'approved' ? 'Снять с публикации' : 'Отклонить' %></button>
+            </form>
+          <% } %>
+        </div>
+      </article>
+    <% }) %>
+  </div>
+</div>
+<%- include('../partials/footer') %>

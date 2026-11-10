@@ -1,0 +1,7 @@
+<nav class="admin-nav">
+  <a href="/admin" class="<%= currentPath === '/admin' || currentPath === '/admin/' ? 'active' : '' %>"><%- icon('home') %>Обзор</a>
+  <a href="/admin/works" class="<%= currentPath.startsWith('/admin/works') ? 'active' : '' %>"><%- icon('book') %>Тайтлы</a>
+  <a href="/admin/teams" class="<%= currentPath.startsWith('/admin/teams') ? 'active' : '' %>"><%- icon('users') %>Команды</a>
+  <a href="/admin/taxonomy" class="<%= currentPath.startsWith('/admin/taxonomy') ? 'active' : '' %>"><%- icon('layers') %>Жанры и теги</a>
+  <% if (isAdmin) { %><a href="/admin/users" class="<%= currentPath.startsWith('/admin/users') ? 'active' : '' %>"><%- icon('user') %>Пользователи</a><% } %>
+</nav>

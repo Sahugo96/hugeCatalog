@@ -1,0 +1,203 @@
+<%- include('partials/header') %>
+<%
+  var f = filters;
+  var stateOf = function (key, value) { return f[key].indexOf(value) >= 0 ? 1 : (f[key + '_ex'].indexOf(value) >= 0 ? 2 : 0); };
+  var nameOf = function (list, slug) { var x = list.find(function (i) { return i.slug === slug; }); return x ? x.name : slug; };
+  var allTags = []; tagGroups.forEach(function (g) { allTags = allTags.concat(g.tags); });
+
+  // Ссылка без одного значения фильтра — для чипов «активные фильтры».
+  var baseQuery = {};
+  ['q','genre','genre_ex','genre_mode','tag','tag_ex','tag_mode','type','type_ex','lang','lang_ex','age','age_ex','status','status_ex','author','author_ex','team','year_from','year_to','ch_from','ch_to','sort','dir'].forEach(function (k) {
+    var v = f[k]; if (v !== null && v !== '' && !(Array.isArray(v) && !v.length)) baseQuery[k] = v;
+  });
+  if (baseQuery.genre_mode === 'all') delete baseQuery.genre_mode;
+  if (baseQuery.tag_mode === 'all') delete baseQuery.tag_mode;
+  if (baseQuery.sort === 'popular') delete baseQuery.sort;
+  if (baseQuery.dir === 'desc') delete baseQuery.dir;
+  var without = function (key, value) {
+    var o = Object.assign({}, baseQuery);
+    if (Array.isArray(o[key])) o[key] = o[key].filter(function (x) { return x !== value; }); else delete o[key];
+    return buildUrl('/catalog', o);
+  };
+  var active = [];
+  var pushList = function (key, labelFn, prefix) {
+    f[key].forEach(function (v) { active.push({ label: prefix + labelFn(v), url: without(key, v), ex: false }); });
+    f[key + '_ex'].forEach(function (v) { active.push({ label: prefix + labelFn(v), url: without(key + '_ex', v), ex: true }); });
+  };
+  pushList('type', function (v) { return labelOf(C.TYPES, v); }, '');
+  pushList('genre', function (v) { return nameOf(genres, v); }, '');
+  pushList('tag', function (v) { return nameOf(allTags, v); }, '#');
+  pushList('status', function (v) { return labelOf(C.STATUSES, v); }, '');
+  pushList('lang', function (v) { return labelOf(C.LANGUAGES, v); }, 'Язык: ');
+  pushList('age', function (v) { return v; }, 'Возраст: ');
+  pushList('author', function (v) { return nameOf(selectedAuthors, v); }, 'Автор: ');
+  f.team.forEach(function (v) { active.push({ label: 'Команда: ' + nameOf(selectedTeams, v), url: without('team', v), ex: false }); });
+  if (f.year_from !== null) active.push({ label: 'Год от ' + f.year_from, url: without('year_from'), ex: false });
+  if (f.year_to !== null) active.push({ label: 'Год до ' + f.year_to, url: without('year_to'), ex: false });
+  if (f.ch_from !== null) active.push({ label: 'Глав от ' + f.ch_from, url: without('ch_from'), ex: false });
+  if (f.ch_to !== null) active.push({ label: 'Глав до ' + f.ch_to, url: without('ch_to'), ex: false });
+%>
+
+<%
+  // Трёхпозиционный чип: выкл → включить → исключить.
+  var tri = function (key, value, label) {
+    var st = stateOf(key, value);
+    var name = st === 2 ? key + '_ex' : key;
+    return '<div class="tri" data-state="' + st + '" data-key="' + key + '">' +
+      '<button type="button" class="tri-btn" aria-pressed="' + (st ? 'true' : 'false') + '" title="Клик — включить, ещё клик — исключить">' +
+      '<span class="tri-box" aria-hidden="true"></span><span class="tri-label">' + label + '</span></button>' +
+      '<input type="hidden" name="' + name + '" value="' + value + '"' + (st ? '' : ' disabled') + '></div>';
+  };
+  var esc = function (s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+%>
+
+<div class="container catalog-layout page-pad">
+  <aside class="filters" id="filters-panel" aria-label="Фильтры">
+    <form id="filters" action="/catalog" method="get">
+      <div class="filters-head">
+        <h2><%- icon('filter') %>Фильтры</h2>
+        <button type="button" class="icon-btn only-mobile" data-close-filters aria-label="Закрыть"><%- icon('x') %></button>
+      </div>
+      <p class="filters-hint muted">
+        <span><span class="tri-demo" data-state="1"><span class="tri-box"></span></span>1 клик — включить</span>
+        <span><span class="tri-demo" data-state="2"><span class="tri-box"></span></span>2 клика — исключить (или правый клик)</span>
+      </p>
+
+      <div class="filter-group">
+        <div class="filter-title">Тип</div>
+        <div class="tri-list"><% C.TYPES.forEach(function (t) { %><%- tri('type', t.value, esc(t.label)) %><% }) %></div>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-title">
+          <span>Жанры</span>
+          <label class="mode-switch" title="Как сочетать выбранные жанры">
+            <select name="genre_mode">
+              <option value="all" <%= f.genre_mode === 'all' ? 'selected' : '' %>>все выбранные</option>
+              <option value="any" <%= f.genre_mode === 'any' ? 'selected' : '' %>>любой из</option>
+            </select>
+          </label>
+        </div>
+        <input type="search" class="input input-sm filter-search" placeholder="Найти жанр…" data-filter-search="genres-list" aria-label="Найти жанр">
+        <div class="tri-list scroll-list" id="genres-list"><% genres.slice().sort(function (x, y) { return (stateOf('genre', y.slug) ? 1 : 0) - (stateOf('genre', x.slug) ? 1 : 0); }).forEach(function (g) { %><%- tri('genre', g.slug, esc(g.name)) %><% }) %></div>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-title">
+          <span>Теги</span>
+          <label class="mode-switch">
+            <select name="tag_mode">
+              <option value="all" <%= f.tag_mode === 'all' ? 'selected' : '' %>>все выбранные</option>
+              <option value="any" <%= f.tag_mode === 'any' ? 'selected' : '' %>>любой из</option>
+            </select>
+          </label>
+        </div>
+        <input type="search" class="input input-sm filter-search" placeholder="Найти тег…" data-filter-search="tags-list" aria-label="Найти тег">
+        <div id="tags-list" class="scroll-list">
+          <% tagGroups.forEach(function (g) { var cnt = g.tags.filter(function (t) { return stateOf('tag', t.slug); }).length; %>
+            <details class="tag-group" <%= cnt ? 'open' : '' %>>
+              <summary><%= g.group %><% if (cnt) { %> <span class="count-badge"><%= cnt %></span><% } %></summary>
+              <div class="tri-list"><% g.tags.forEach(function (t) { %><%- tri('tag', t.slug, esc(t.name)) %><% }) %></div>
+            </details>
+          <% }) %>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-title">Статус</div>
+        <div class="tri-list"><% C.STATUSES.forEach(function (s) { %><%- tri('status', s.value, esc(s.label)) %><% }) %></div>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-title">Язык оригинала</div>
+        <div class="tri-list"><% C.LANGUAGES.forEach(function (l) { %><%- tri('lang', l.value, esc(l.label)) %><% }) %></div>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-title">Возрастной рейтинг</div>
+        <div class="tri-list"><% C.AGE_RATINGS.forEach(function (a) { %><%- tri('age', a.value, esc(a.label)) %><% }) %></div>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-title">Год начала</div>
+        <div class="range-row">
+          <input class="input input-sm" type="number" name="year_from" placeholder="от" min="1900" max="2100" value="<%= f.year_from === null ? '' : f.year_from %>" aria-label="Год от">
+          <span class="muted">—</span>
+          <input class="input input-sm" type="number" name="year_to" placeholder="до" min="1900" max="2100" value="<%= f.year_to === null ? '' : f.year_to %>" aria-label="Год до">
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-title">Количество глав</div>
+        <div class="range-row">
+          <input class="input input-sm" type="number" name="ch_from" placeholder="от" min="0" value="<%= f.ch_from === null ? '' : f.ch_from %>" aria-label="Глав от">
+          <span class="muted">—</span>
+          <input class="input input-sm" type="number" name="ch_to" placeholder="до <%= maxChapters || '' %>" min="0" value="<%= f.ch_to === null ? '' : f.ch_to %>" aria-label="Глав до">
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-title">Автор</div>
+        <div class="tri-list" id="authors-list"><% selectedAuthors.forEach(function (a) { %><%- tri('author', a.slug, esc(a.name)) %><% }) %></div>
+        <div class="autocomplete">
+          <input type="search" class="input input-sm" placeholder="Начните вводить имя…" data-author-search aria-label="Найти автора" autocomplete="off">
+          <div class="autocomplete-list" hidden></div>
+        </div>
+      </div>
+
+      <% f.team.forEach(function (t) { %><input type="hidden" name="team" value="<%= t %>"><% }) %>
+
+      <div class="filters-actions">
+        <button type="submit" class="btn btn-primary btn-block"><%- icon('check') %>Применить</button>
+        <a href="/catalog" class="btn btn-ghost btn-block">Сбросить</a>
+      </div>
+    </form>
+  </aside>
+  <div class="filters-backdrop" data-close-filters></div>
+
+  <section class="catalog-main">
+    <div class="catalog-head">
+      <h1><%= heading %> <span class="muted count"><%= result.total %></span></h1>
+    </div>
+    <div class="catalog-toolbar">
+      <div class="input-icon grow">
+        <%- icon('search') %>
+        <input form="filters" class="input" type="search" name="q" value="<%= f.q %>" placeholder="Название, альтернативное название или автор" aria-label="Поиск по каталогу">
+      </div>
+      <select form="filters" class="input select" name="sort" data-autosubmit aria-label="Сортировка">
+        <% C.SORTS.forEach(function (s) { %><option value="<%= s.value %>" <%= f.sort === s.value ? 'selected' : '' %>><%= s.label %></option><% }) %>
+      </select>
+      <button class="icon-btn bordered" type="button" data-toggle-dir title="<%= f.dir === 'desc' ? 'Сейчас: по убыванию' : 'Сейчас: по возрастанию' %>" aria-label="Изменить порядок сортировки">
+        <%- icon('sort', f.dir === 'asc' ? 'flip-y' : '') %>
+      </button>
+      <input form="filters" type="hidden" name="dir" value="<%= f.dir %>">
+      <button type="button" class="btn btn-ghost only-mobile-flex" data-open-filters><%- icon('filter') %>Фильтры<% if (activeCount) { %> <span class="count-badge"><%= activeCount %></span><% } %></button>
+    </div>
+
+    <% if (active.length) { %>
+      <div class="active-filters">
+        <% active.forEach(function (a) { %>
+          <a class="chip chip-removable <%= a.ex ? 'chip-exclude' : 'chip-include' %>" href="<%= a.url %>" title="Убрать фильтр">
+            <%= a.ex ? '−' : '' %><%= a.label %> <%- icon('x', 'tiny') %>
+          </a>
+        <% }) %>
+        <a class="chip chip-clear" href="/catalog<%= f.q ? '?q=' + encodeURIComponent(f.q) : '' %>">Сбросить всё</a>
+      </div>
+    <% } %>
+
+    <% if (result.items.length) { %>
+      <div class="grid">
+        <% result.items.forEach(function (w) { %><%- include('partials/card', { w: w, rank: null, extra: null }) %><% }) %>
+      </div>
+      <%- include('partials/pagination', { page: result.page, pages: result.pages, query: Object.assign({}, baseQuery), base: '/catalog' }) %>
+    <% } else { %>
+      <div class="empty empty-lg">
+        <%- icon('search') %>
+        <p>Ничего не найдено. Попробуйте ослабить фильтры.</p>
+        <a href="/catalog" class="btn btn-ghost">Сбросить фильтры</a>
+      </div>
+    <% } %>
+  </section>
+</div>
+
+<%- include('partials/footer') %>
