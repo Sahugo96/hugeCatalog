@@ -4,24 +4,24 @@
     <span class="avatar avatar-lg"><%= profile.username.slice(0, 1).toUpperCase() %></span>
     <div>
       <h1><%= profile.username %></h1>
-      <p class="muted">С нами с <%= util.formatDate(profile.created_at) %><% if (profile.role !== 'user') { %> · <%= labelOf(C.ROLES, profile.role) %><% } %></p>
+      <p class="muted"><%= __('С нами с') %> <%= util.formatDate(profile.created_at) %><% if (profile.role !== 'user') { %> · <%= labelOf(C.ROLES, profile.role) %><% } %></p>
     </div>
     <% if (user && user.id !== profile.id) { %>
-      <div class="profile-actions"><button class="btn btn-primary btn-sm" data-open-dm="<%= profile.username %>"><%- icon('chat') %>Написать сообщение</button></div>
+      <div class="profile-actions"><button class="btn btn-primary btn-sm" data-open-dm="<%= profile.username %>"><%- icon('chat') %><%= __('Написать сообщение') %></button></div>
     <% } else if (!user) { %>
-      <div class="profile-actions"><a class="btn btn-ghost btn-sm" href="/login"><%- icon('chat') %>Войдите, чтобы написать</a></div>
+      <div class="profile-actions"><a class="btn btn-ghost btn-sm" href="/login"><%- icon('chat') %><%= __('Войдите, чтобы написать') %></a></div>
     <% } %>
   </div>
   <% if (profile.about) { %><div class="prose"><p><%= profile.about %></p></div><% } %>
   <% if (teams.length) { %>
-    <h2 class="h3">Команды</h2>
+    <h2 class="h3"><%= __('Команды') %></h2>
     <div class="chips"><% teams.forEach(function (t) { %><a class="chip" href="/team/<%= t.slug %>"><%= t.name %><%= t.role === 'owner' ? ' ★' : '' %></a><% }) %></div>
   <% } %>
   <section class="section">
-    <div class="section-head"><h2><%- icon('bookmark') %>Избранное</h2></div>
+    <div class="section-head"><h2><%- icon('bookmark') %><%= __('Избранное') %></h2></div>
     <% if (favorites.length) { %>
       <div class="grid"><% favorites.forEach(function (w) { %><%- include('../partials/card', { w: w, rank: null, extra: null }) %><% }) %></div>
-    <% } else { %><div class="empty">Пока ничего.</div><% } %>
+    <% } else { %><div class="empty"><%= __('Пока ничего.') %></div><% } %>
   </section>
 </div>
 <%- include('../partials/footer') %>

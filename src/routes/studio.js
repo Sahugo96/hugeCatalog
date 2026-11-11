@@ -170,7 +170,7 @@ router.get('/api/works', (req, res) => {
     FROM works w WHERE w.search_text LIKE ? ESCAPE '\\' ORDER BY w.views DESC LIMIT 30`).all(`%${escapeLike(text)}%`)
     .filter((w) => w.moderation === 'approved' || canEditWork(req.user, w))
     .slice(0, 10)
-    .map(({ team_id, ...w }) => ({ ...w, language_label: C.labelOf(C.LANGUAGES, w.language) }));
+    .map(({ team_id, ...w }) => ({ ...w, language_label: req.__(C.labelOf(C.LANGUAGES, w.language)) }));
   res.json({ items });
 });
 

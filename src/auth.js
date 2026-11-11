@@ -54,7 +54,7 @@ function wantsJson(req) {
 
 function requireAuth(req, res, next) {
   if (req.user) return next();
-  if (wantsJson(req)) return res.status(401).json({ error: 'Нужно войти в аккаунт' });
+  if (wantsJson(req)) return res.status(401).json({ error: req.__ ? req.__('Нужно войти в аккаунт') : 'Нужно войти в аккаунт' });
   req.session.returnTo = req.originalUrl;
   req.flash('info', 'Войдите или зарегистрируйтесь, чтобы продолжить.');
   return res.redirect('/login');
@@ -95,7 +95,7 @@ function verifyCsrf(req, res, next) {
     crypto.timingSafeEqual(Buffer.from(sent), Buffer.from(expected));
   if (ok) return next();
   require('./upload').cleanupTmp(req);
-  if (wantsJson(req)) return res.status(403).json({ error: 'Сессия устарела, обновите страницу' });
+  if (wantsJson(req)) return res.status(403).json({ error: req.__ ? req.__('Сессия устарела, обновите страницу') : 'Сессия устарела, обновите страницу' });
   res.status(403);
   return res.render('error', { title: 'Ошибка безопасности', message: 'Сессия устарела. Обновите страницу и попробуйте снова.' });
 }

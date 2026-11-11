@@ -86,7 +86,10 @@ router.post('/api/chat/messages/:id/report', requireAuth, (req, res) => {
 
 router.get('/api/notifications', requireAuth, (req, res) => {
   const items = q('SELECT id, type, title, body, link, is_read, created_at FROM notifications WHERE user_id = ? ORDER BY id DESC LIMIT 15').all(req.user.id);
-  res.json({ items: items.map((n) => ({ ...n, created_at: n.created_at.replace(' ', 'T') + 'Z' })), counters: N.counters(req.user.id) });
+  res.json({
+    items: items.map((n) => ({ ...n, title: req.__(n.title), body: req.__(n.body), created_at: n.created_at.replace(' ', 'T') + 'Z' })),
+    counters: N.counters(req.user.id),
+  });
 });
 
 router.post('/api/notifications/read', requireAuth, (req, res) => {

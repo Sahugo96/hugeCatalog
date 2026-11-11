@@ -1,0 +1,61 @@
+<%- include('partials/header') %>
+<div class="container narrow page-pad prose">
+  <h1>Privacy policy</h1>
+  <p class="muted">Version of 11 November 2026. In case of discrepancies, the Russian version prevails.</p>
+
+  <p>This policy describes what data the <%= SITE_NAME %> website (the “Site”) collects, how it is used and protected. By using the Site, you agree to the terms of this policy.</p>
+
+  <h2>1. What data we collect</h2>
+  <ul>
+    <li><strong>Account data:</strong> username, e-mail address and password (stored only as a cryptographic hash; we never know the password itself).</li>
+    <li><strong>Profile data:</strong> the “about me” information you provide voluntarily.</li>
+    <li><strong>Activity on the Site:</strong> likes, favorites, reading history, team membership and uploaded material.</li>
+    <li><strong>Reading statistics:</strong> which chapters you opened (counted once per chapter) — for view counters and recommendations.</li>
+    <li><strong>Chat messages:</strong> public chat messages and private messages between users, message reports, and the list of users you have blocked.</li>
+    <li><strong>Notifications:</strong> records of events related to your account (new chapters in favorites, moderator decisions, etc.).</li>
+    <li><strong>Technical data:</strong> IP address and browser information — used only to protect against abuse (for example, limiting login attempts) and not stored in the database.</li>
+  </ul>
+
+  <h2>2. Cookies and local storage</h2>
+  <p>The Site uses functional cookies: <code>hc.sid</code> keeps your session after login and protects forms, <code>lang</code> remembers the interface language you chose. Your browser’s local storage keeps only preferences: the theme, reader mode and age confirmation. No advertising or third-party tracking cookies are used.</p>
+
+  <h2>3. Why we use data</h2>
+  <ul>
+    <li>to log you in and provide personal features (favorites, likes, “continue reading”);</li>
+    <li>to moderate teams and uploaded material;</li>
+    <li>to build the “Read today” and “Top today” lists — only as anonymized statistics;</li>
+    <li>to protect the Site from spam, password guessing and other abuse.</li>
+  </ul>
+
+  <h2>4. Chat and private messages</h2>
+  <ul>
+    <li><strong>Public chat</strong> messages are visible to all visitors of the Site.</li>
+    <li><strong>Private messages</strong> are visible to you and your contact. They are not end-to-end encrypted and are stored on the Site’s server.</li>
+    <li><strong>The Site administration has technical access to private messages</strong> and uses it only for moderation: reviewing reports, preventing spam, fraud and other unlawful activity, and complying with lawful requests from authorities. Every such access is recorded in the moderation log.</li>
+    <li>Moderators see messages that have been reported. Messages that break the rules may be deleted, and their author may lose access to the chat or the Site.</li>
+    <li>Do not share passwords, payment details or other confidential data in the chat.</li>
+  </ul>
+
+  <h2>5. Sharing with third parties</h2>
+  <p>We do not sell or share your personal data with third parties, except where expressly required by law. Only your username, “about me” information, teams and favorites on your profile page are public.</p>
+
+  <h2>6. Storage and protection</h2>
+  <p>Data is stored on the Site’s server. Passwords are hashed with scrypt and an individual salt, forms are protected against cross-site request forgery, and the session cookie is inaccessible to page scripts.</p>
+
+  <h2>7. Your rights</h2>
+  <ul>
+    <li>view and edit your profile data in the <a href="/settings">settings</a>;</li>
+    <li>remove likes, favorites and history by unmarking them;</li>
+    <li>request full deletion of your account and related data by contacting the administration.</li>
+  </ul>
+
+  <h2>8. Age restrictions</h2>
+  <p>18+ material is marked separately and shown only after age confirmation. If you are under 18, do not open such material.</p>
+
+  <h2>9. Changes to this policy</h2>
+  <p>We may update this policy. The date of the current version is shown at the top of the page. By continuing to use the Site after changes, you agree to the new version.</p>
+
+  <h2>10. Contact</h2>
+  <p>For questions about personal data, contact the Site administration.</p>
+</div>
+<%- include('partials/footer') %>

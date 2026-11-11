@@ -2,11 +2,11 @@
 <div class="container narrow page-pad">
   <div class="error-box">
     <div class="error-code"><%= typeof code !== 'undefined' && code ? code : '!' %></div>
-    <h1><%= title %></h1>
-    <p class="muted"><%= message %></p>
+    <h1><%= __(title) %></h1>
+    <p class="muted"><%= __(message) %></p>
     <div class="row-gap">
-      <a href="/" class="btn btn-primary"><%- icon('home') %>На главную</a>
-      <a href="/catalog" class="btn btn-ghost">Открыть каталог</a>
+      <a href="/" class="btn btn-primary"><%- icon('home') %><%= __('На главную') %></a>
+      <a href="/catalog" class="btn btn-ghost"><%= __('Открыть каталог') %></a>
     </div>
   </div>
 </div>

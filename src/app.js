@@ -14,6 +14,7 @@ const util = require('./util');
 const { cleanupTmp } = require('./upload');
 const { icon } = require('./icons');
 const { flag } = require('./flags');
+const i18n = require('./i18n');
 
 /** Строит URL с query-параметрами. Массивы разворачиваются в повторяющиеся ключи, пустые значения пропускаются. */
 function buildUrl(base, params = {}) {
@@ -101,6 +102,15 @@ function createApp() {
   }));
 
   app.use(auth.flash);
+  // Язык интерфейса и помощники шаблонов, зависящие от языка.
+  app.use(i18n.middleware);
+  app.use((req, res, next) => {
+    const lang = req.lang;
+    res.locals.util = { ...util, timeAgo: (s) => util.timeAgo(s, lang), formatDate: (s) => util.formatDate(s, lang) };
+    res.locals.labelOf = (list, value) => req.__(C.labelOf(list, value));
+    res.locals.flag = (code, cls) => flag(code, req.__(C.labelOf(C.LANGUAGES, code)), cls);
+    next();
+  });
   app.use(auth.loadUser);
   app.use(auth.csrfLocals);
   app.use((req, res, next) => {
@@ -143,6 +153,7 @@ function createApp() {
       }[err.code] || 'Ошибка загрузки файла.';
     }
     if (status >= 500) console.error(err);
+    if (req.__) message = req.__(message);
     if (auth.wantsJson(req)) return res.status(status).json({ error: message });
     res.status(status).render('error', { title: status >= 500 ? 'Ошибка сервера' : 'Ошибка', message, code: status });
   });

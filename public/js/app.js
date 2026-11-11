@@ -100,6 +100,69 @@
     el.addEventListener('change', function () { (el.form || document.getElementById(el.getAttribute('form'))).requestSubmit(); });
   });
 
+  /* ---------- Выпадающий список в стиле меню (вместо нативного select) ---------- */
+  var CHECK = '<svg class="icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+  $$('select[data-fancy]').forEach(function (sel) {
+    var wrap = document.createElement('div');
+    wrap.className = 'dropdown fancy-select';
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'input select fancy-select-btn';
+    btn.setAttribute('data-dropdown', '');
+    btn.setAttribute('aria-haspopup', 'listbox');
+    btn.setAttribute('aria-expanded', 'false');
+    btn.setAttribute('aria-label', sel.getAttribute('aria-label') || '');
+    var menu = document.createElement('div');
+    menu.className = 'dropdown-menu';
+    menu.setAttribute('role', 'listbox');
+    var render = function () {
+      var current = sel.options[sel.selectedIndex];
+      btn.textContent = current ? current.textContent : '';
+      menu.innerHTML = '';
+      Array.prototype.forEach.call(sel.options, function (o) {
+        var item = document.createElement('button');
+        item.type = 'button';
+        item.setAttribute('role', 'option');
+        item.setAttribute('aria-selected', o.selected ? 'true' : 'false');
+        item.className = o.selected ? 'selected' : '';
+        item.dataset.value = o.value;
+        item.innerHTML = '<span>' + escapeHtml(o.textContent) + '</span>' + (o.selected ? CHECK : '');
+        menu.appendChild(item);
+      });
+    };
+    sel.parentNode.insertBefore(wrap, sel);
+    wrap.appendChild(btn);
+    wrap.appendChild(menu);
+    wrap.appendChild(sel);
+    sel.hidden = true;
+    render();
+    menu.addEventListener('click', function (e) {
+      var item = e.target.closest('[data-value]');
+      if (!item || item.dataset.value === sel.value) return;
+      sel.value = item.dataset.value;
+      render();
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    btn.addEventListener('click', function () {
+      setTimeout(function () {
+        var s = menu.querySelector('.selected') || menu.firstChild;
+        if (wrap.classList.contains('open') && s) s.focus();
+      });
+    });
+    menu.addEventListener('keydown', function (e) {
+      var items = $$('[role="option"]', menu);
+      var i = items.indexOf(document.activeElement);
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        items[(i + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length].focus();
+      } else if (e.key === 'Escape' || e.key === 'Tab') {
+        wrap.classList.toggle('open', false);
+        btn.setAttribute('aria-expanded', 'false');
+        if (e.key === 'Escape') btn.focus();
+      }
+    });
+  });
+
   /* ---------- Быстрый поиск в шапке ---------- */
   var qs = $('[data-quick-search]');
   if (qs) {
@@ -113,13 +176,13 @@
               (it.cover ? '<img src="' + escapeHtml(it.cover) + '" alt="">' : '') +
               '<span><strong>' + escapeHtml(it.title) + '</strong><small>' + escapeHtml((typeLabels[it.type] || it.type) + (it.year ? ' · ' + it.year : '')) + '</small></span></a>';
           }).join('')
-        : '<div class="search-empty">Ничего не найдено</div>';
-      html += '<a class="search-all" href="/catalog?q=' + encodeURIComponent(q) + '">Расширенный поиск по «' + escapeHtml(q) + '»</a>';
+        : '<div class="search-empty">' + T('Ничего не найдено') + '</div>';
+      html += '<a class="search-all" href="/catalog?q=' + encodeURIComponent(q) + '">' + escapeHtml(T('Расширенный поиск по «{q}»', { q: q })) + '</a>';
       dropdown.innerHTML = html;
       dropdown.hidden = false;
       active = -1;
     };
-    var typeLabels = { manga: 'Манга', manhwa: 'Манхва', manhua: 'Маньхуа', webtoon: 'Вебтун', comic: 'Комикс', oel: 'OEL-манга', russian: 'Руманга', doujinshi: 'Додзинси', other: 'Другое' };
+    var typeLabels = { manga: T('Манга'), manhwa: T('Манхва'), manhua: T('Маньхуа'), webtoon: T('Вебтун'), comic: T('Комикс'), oel: T('OEL-манга'), russian: T('Руманга'), doujinshi: T('Додзинси'), other: T('Другое') };
     var search = debounce(function () {
       var q = qs.value.trim();
       if (q.length < 2) { dropdown.hidden = true; return; }
@@ -159,13 +222,13 @@
       method: 'POST',
       headers: { 'X-CSRF-Token': csrf, Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
     })
-      .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || 'Ошибка'); return d; }); })
+      .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || T('Ошибка')); return d; }); })
       .then(function (d) {
         $$('[data-toggle-action="' + action + '"][data-work="' + btn.getAttribute('data-work') + '"]').forEach(function (b) {
           b.classList.toggle('is-on', d.active);
           b.setAttribute('aria-pressed', d.active);
           var c = $('[data-count]', b); if (c) c.textContent = d.count;
-          var l = $('[data-label]', b); if (l) l.textContent = d.active ? 'В избранном' : 'В избранное';
+          var l = $('[data-label]', b); if (l) l.textContent = d.active ? T('В избранном') : T('В избранное');
         });
         if (action === 'like') { var s = $('[data-likes-stat]'); if (s) s.textContent = d.count; }
       })
@@ -243,7 +306,7 @@
       fetch('/api/authors?q=' + encodeURIComponent(q)).then(function (r) { return r.json(); }).then(function (d) {
         list.innerHTML = (d.items || []).map(function (a) {
           return '<button type="button" data-slug="' + escapeHtml(a.slug) + '">' + escapeHtml(a.name) + '</button>';
-        }).join('') || '<div class="search-empty">Не найдено</div>';
+        }).join('') || '<div class="search-empty">' + T('Не найдено') + '</div>';
         list.hidden = false;
       });
     }, 200));
@@ -362,7 +425,7 @@
 
   $$('[data-checked-count]').forEach(function (label) {
     var box = document.getElementById(label.getAttribute('data-checked-count'));
-    var update = function () { var n = $$('input:checked', box).length; label.textContent = n ? '· выбрано: ' + n : ''; };
+    var update = function () { var n = $$('input:checked', box).length; label.textContent = n ? T('· выбрано: {n}', { n: n }) : ''; };
     box.addEventListener('change', update);
     update();
   });
@@ -396,8 +459,8 @@
             return '<button type="button" data-id="' + w.id + '" data-title="' + escapeHtml(w.title) + '">' +
               (w.cover ? '<img src="' + escapeHtml(w.cover) + '" alt="">' : '') +
               '<span><strong>' + escapeHtml(w.title) + '</strong><small>' + escapeHtml(w.language_label) + (w.year ? ' · ' + w.year : '') +
-              (w.moderation !== 'approved' ? ' · на модерации' : '') + '</small></span></button>';
-          }).join('') || '<div class="search-empty">Ничего не найдено</div>';
+              (w.moderation !== 'approved' ? ' · ' + T('на модерации') : '') + '</small></span></button>';
+          }).join('') || '<div class="search-empty">' + T('Ничего не найдено') + '</div>';
           results.hidden = false;
         });
     }, 200));
@@ -405,7 +468,7 @@
     results.addEventListener('click', function (e) {
       var b = e.target.closest('button[data-id]');
       if (!b) return;
-      if (!window.confirm('Связать с «' + b.getAttribute('data-title') + '» как языковые версии одного произведения?')) return;
+      if (!window.confirm(T('Связать с «{title}» как языковые версии одного произведения?', { title: b.getAttribute('data-title') }))) return;
       linkForm.querySelector('[name="target_id"]').value = b.getAttribute('data-id');
       linkForm.submit();
     });
@@ -453,7 +516,7 @@
         if (!ev.lengthComputable) return;
         var p = Math.round(ev.loaded / ev.total * 100);
         fill.style.width = p + '%';
-        label.textContent = p < 100 ? 'Загрузка… ' + p + '%' : 'Обработка…';
+        label.textContent = p < 100 ? T('Загрузка…') + ' ' + p + '%' : T('Обработка…');
       };
       xhr.onload = function () {
         var type = xhr.getResponseHeader('Content-Type') || '';
@@ -461,7 +524,7 @@
           var d = {};
           try { d = JSON.parse(xhr.responseText); } catch (err) { /* ignore */ }
           if (d.redirect) { window.location = d.redirect; return; }
-          label.textContent = d.error || 'Ошибка загрузки';
+          label.textContent = d.error || T('Ошибка загрузки');
           fill.style.width = '0';
           $$('button[type="submit"]', form).forEach(function (b) { b.disabled = false; });
           return;
@@ -469,7 +532,7 @@
         document.open(); document.write(xhr.responseText); document.close();
       };
       xhr.onerror = function () {
-        label.textContent = 'Ошибка сети. Попробуйте ещё раз.';
+        label.textContent = T('Ошибка сети. Попробуйте ещё раз.');
         $$('button[type="submit"]', form).forEach(function (b) { b.disabled = false; });
       };
       xhr.send(data);

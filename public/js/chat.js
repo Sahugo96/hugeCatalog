@@ -35,7 +35,7 @@
     }
     return fetch(url, opts).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (d) {
-        if (!r.ok) throw new Error(d.error || 'Ошибка ' + r.status);
+        if (!r.ok) throw new Error(d.error || T('Ошибка') + ' ' + r.status);
         return d;
       });
     });
@@ -44,9 +44,10 @@
   function fmtTime(isoStr) {
     var d = new Date(isoStr);
     var now = new Date();
-    var hm = d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    var loc = window.LANG === 'en' ? 'en-GB' : 'ru-RU';
+    var hm = d.toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit' });
     if (d.toDateString() === now.toDateString()) return hm;
-    return d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' }) + ' ' + hm;
+    return d.toLocaleDateString(loc, { day: '2-digit', month: '2-digit' }) + ' ' + hm;
   }
 
   /* ======================= Счётчики и уведомления ======================= */
@@ -89,8 +90,8 @@
         return '<a class="notif-item ' + (n.is_read ? '' : 'unread') + '" href="/notifications/' + n.id + '/go">' +
           '<strong>' + esc(n.title) + '</strong>' + (n.body ? '<span class="muted">' + esc(n.body) + '</span>' : '') +
           '<time class="muted">' + fmtTime(n.created_at) + '</time></a>';
-      }).join('') : '<div class="search-empty">Уведомлений нет</div>';
-    }).catch(function () { notifList.innerHTML = '<div class="search-empty">Не удалось загрузить</div>'; });
+      }).join('') : '<div class="search-empty">' + T('Уведомлений нет') + '</div>';
+    }).catch(function () { notifList.innerHTML = '<div class="search-empty">' + T('Не удалось загрузить') + '</div>'; });
   }
   document.addEventListener('click', function (e) {
     if (e.target.closest('[data-notif-toggle]')) loadNotifications();
@@ -173,22 +174,22 @@
   }
 
   function renderLoginPrompt() {
-    view.innerHTML = '<div class="chat-empty"><p>Личные сообщения доступны после входа.</p><a class="btn btn-primary btn-sm" href="/login">Войти</a> <a class="btn btn-ghost btn-sm" href="/register">Регистрация</a></div>';
+    view.innerHTML = '<div class="chat-empty"><p>' + T('Личные сообщения доступны после входа.') + '</p><a class="btn btn-primary btn-sm" href="/login">' + T('Войти') + '</a> <a class="btn btn-ghost btn-sm" href="/register">' + T('Регистрация') + '</a></div>';
   }
 
   /* ----- Сообщения ----- */
 
   function messageHtml(m) {
     var mine = me && m.sender.id === me.id;
-    var role = m.sender.role === 'admin' ? '<span class="role-tag">админ</span>' : m.sender.role === 'moderator' ? '<span class="role-tag">модер</span>' : '';
+    var role = m.sender.role === 'admin' ? '<span class="role-tag">' + T('админ') + '</span>' : m.sender.role === 'moderator' ? '<span class="role-tag">' + T('модер') + '</span>' : '';
     var actions = '';
     if (me && !m.deleted) {
-      if (mine || (me.staff && !m.conversation_id)) actions += '<button class="msg-act" data-msg-delete="' + m.id + '" title="Удалить">' + ICON.trash + '</button>';
-      if (!mine) actions += '<button class="msg-act" data-msg-report="' + m.id + '" title="Пожаловаться">' + ICON.flag + '</button>';
+      if (mine || (me.staff && !m.conversation_id)) actions += '<button class="msg-act" data-msg-delete="' + m.id + '" title="' + T('Удалить') + '">' + ICON.trash + '</button>';
+      if (!mine) actions += '<button class="msg-act" data-msg-report="' + m.id + '" title="' + T('Пожаловаться') + '">' + ICON.flag + '</button>';
     }
     return '<div class="msg ' + (mine ? 'mine' : '') + (m.deleted ? ' deleted' : '') + '" data-msg-id="' + m.id + '">' +
       (state.conv || mine ? '' : '<a class="msg-author" href="/user/' + encodeURIComponent(m.sender.username) + '">' + esc(m.sender.username) + role + '</a>') +
-      '<div class="msg-bubble">' + (m.deleted ? '<em>Сообщение удалено</em>' : esc(m.body)) + '</div>' +
+      '<div class="msg-bubble">' + (m.deleted ? '<em>' + T('Сообщение удалено') + '</em>' : esc(m.body)) + '</div>' +
       '<div class="msg-meta"><time>' + fmtTime(m.created_at) + '</time>' + actions + '</div></div>';
   }
 
@@ -216,11 +217,11 @@
   }
 
   function composerHtml(placeholder, notice) {
-    if (!me) return '<div class="chat-login"><a href="/login">Войдите</a>, чтобы писать в чат</div>';
+    if (!me) return '<div class="chat-login"><a href="/login">' + T('Войдите, чтобы писать в чат') + '</a></div>';
     return (notice ? '<div class="chat-notice">' + notice + '</div>' : '') +
       '<form class="chat-composer" data-composer>' +
-      '<textarea rows="1" maxlength="1000" placeholder="' + placeholder + '" aria-label="Сообщение"></textarea>' +
-      '<button class="icon-btn send-btn" type="submit" aria-label="Отправить">' + ICON.send + '</button></form>';
+      '<textarea rows="1" maxlength="1000" placeholder="' + placeholder + '" aria-label="' + T('Сообщение') + '"></textarea>' +
+      '<button class="icon-btn send-btn" type="submit" aria-label="' + T('Отправить') + '">' + ICON.send + '</button></form>';
   }
 
   function bindComposer(sendFn) {
@@ -271,17 +272,17 @@
   /* ----- Общий чат ----- */
 
   function renderGlobal() {
-    view.innerHTML = '<div class="chat-messages" data-msg-list><div class="chat-empty">Загрузка…</div></div>' +
-      composerHtml('Сообщение в общий чат…', null);
+    view.innerHTML = '<div class="chat-messages" data-msg-list><div class="chat-empty">' + T('Загрузка…') + '</div></div>' +
+      composerHtml(T('Сообщение в общий чат…'), null);
     bindComposer(function (text) { return api('POST', '/api/chat/global', { body: text }); });
     state.loading = true;
     api('GET', '/api/chat/global').then(function (d) {
       var list = listEl();
-      list.innerHTML = d.messages.length ? '' : '<div class="chat-empty">Здесь пока тихо. Напишите первым!</div>';
+      list.innerHTML = d.messages.length ? '' : '<div class="chat-empty">' + T('Здесь пока тихо. Напишите первым!') + '</div>';
       appendMessages(list, d.messages, true);
       state.oldestId = d.messages.length >= 50 ? d.messages[0].id : null;
       var online = $('[data-online]', widget);
-      online.textContent = '● ' + d.online; online.hidden = !d.online; online.title = 'Сейчас на сайте: ' + d.online;
+      online.textContent = '● ' + d.online; online.hidden = !d.online; online.title = T('Сейчас на сайте: {n}', { n: d.online });
       state.globalLoaded = true;
     }).finally(function () { state.loading = false; });
     bindScrollLoad(function () {
@@ -302,8 +303,8 @@
 
   function renderConversationList() {
     ss.set('chat-conv', '');
-    view.innerHTML = '<form class="chat-new" data-new-dm><input class="input input-sm" placeholder="Имя пользователя" aria-label="Кому написать" autocomplete="off">' +
-      '<button class="btn btn-primary btn-sm">Написать</button></form><div class="conv-list" data-conv-list><div class="chat-empty">Загрузка…</div></div>';
+    view.innerHTML = '<form class="chat-new" data-new-dm><input class="input input-sm" placeholder="' + T('Имя пользователя') + '" aria-label="' + T('Кому написать') + '" autocomplete="off">' +
+      '<button class="btn btn-primary btn-sm">' + T('Написать') + '</button></form><div class="conv-list" data-conv-list><div class="chat-empty">' + T('Загрузка…') + '</div></div>';
     $('[data-new-dm]', view).addEventListener('submit', function (e) {
       e.preventDefault();
       var name = $('input', e.target).value.trim();
@@ -319,11 +320,11 @@
       box.innerHTML = d.conversations.length ? d.conversations.map(function (c) {
         return '<button class="conv-item' + (c.unread ? ' unread' : '') + '" data-conv="' + c.id + '">' +
           '<span class="avatar">' + esc(c.other.username.slice(0, 1).toUpperCase()) + (c.other.online ? '<i class="online-dot"></i>' : '') + '</span>' +
-          '<span class="conv-text"><strong>' + esc(c.other.username) + (c.blocked ? ' <span class="muted">(заблокирован)</span>' : '') + '</strong>' +
-          '<span class="muted">' + (c.last_mine ? 'Вы: ' : '') + esc(c.last_body || '…') + '</span></span>' +
+          '<span class="conv-text"><strong>' + esc(c.other.username) + (c.blocked ? ' <span class="muted">(' + T('заблокирован') + ')</span>' : '') + '</strong>' +
+          '<span class="muted">' + (c.last_mine ? T('Вы:') + ' ' : '') + esc(c.last_body || '…') + '</span></span>' +
           '<span class="conv-side"><time class="muted">' + (c.last_message_at ? fmtTime(c.last_message_at) : '') + '</time>' +
           (c.unread ? '<span class="count-badge">' + c.unread + '</span>' : '') + '</span></button>';
-      }).join('') : '<div class="chat-empty">Переписок пока нет. Напишите кому-нибудь — например, автору перевода со страницы его профиля.</div>';
+      }).join('') : '<div class="chat-empty">' + T('Переписок пока нет. Напишите кому-нибудь — например, автору перевода со страницы его профиля.') + '</div>';
     }).catch(function (err) { box.innerHTML = '<div class="chat-empty">' + esc(err.message) + '</div>'; });
   }
 
@@ -333,22 +334,22 @@
     if (e.target.closest('[data-conv-back]')) renderConversationList();
     if (e.target.closest('[data-block]')) {
       var blocking = !state.blocked;
-      if (!window.confirm(blocking ? 'Заблокировать ' + state.other.username + '? Вы перестанете получать от него сообщения.' : 'Разблокировать ' + state.other.username + '?')) return;
+      if (!window.confirm(blocking ? T('Заблокировать {name}? Вы перестанете получать от него сообщения.', { name: state.other.username }) : T('Разблокировать {name}?', { name: state.other.username }))) return;
       api('POST', '/api/chat/block', { username: state.other.username }).then(function (d) {
         state.blocked = d.blocked;
         openConversation(state.conv);
       }).catch(function (err) { showError(err.message); });
     }
     var del = e.target.closest('[data-msg-delete]');
-    if (del && window.confirm('Удалить сообщение?')) {
+    if (del && window.confirm(T('Удалить сообщение?'))) {
       api('POST', '/api/chat/messages/' + del.getAttribute('data-msg-delete') + '/delete').catch(function (err) { showError(err.message); });
     }
     var rep = e.target.closest('[data-msg-report]');
     if (rep) {
-      var reason = window.prompt('Почему это сообщение нарушает правила? (спам, оскорбления, незаконный контент…)');
+      var reason = window.prompt(T('Почему это сообщение нарушает правила? (спам, оскорбления, незаконный контент…)'));
       if (reason === null) return;
       api('POST', '/api/chat/messages/' + rep.getAttribute('data-msg-report') + '/report', { reason: reason })
-        .then(function () { showError('Жалоба отправлена модераторам. Спасибо!'); })
+        .then(function () { showError(T('Жалоба отправлена модераторам. Спасибо!')); })
         .catch(function (err) { showError(err.message); });
     }
   });
@@ -364,20 +365,20 @@
     state.conv = id;
     state.loading = true;
     ss.set('chat-conv', id);
-    view.innerHTML = '<div class="chat-messages" data-msg-list><div class="chat-empty">Загрузка…</div></div>';
+    view.innerHTML = '<div class="chat-messages" data-msg-list><div class="chat-empty">' + T('Загрузка…') + '</div></div>';
     api('GET', '/api/chat/conversations/' + id + '/messages').then(function (d) {
       state.other = d.other;
       state.blocked = d.blocked;
-      var head = '<div class="conv-head"><button class="icon-btn small" data-conv-back aria-label="К списку переписок">' + ICON.back + '</button>' +
+      var head = '<div class="conv-head"><button class="icon-btn small" data-conv-back aria-label="' + T('К списку переписок') + '">' + ICON.back + '</button>' +
         '<a href="/user/' + encodeURIComponent(d.other.username) + '" class="conv-name">' + esc(d.other.username) +
-        (d.other.online ? ' <i class="online-dot static" title="В сети"></i>' : '') + '</a>' +
-        '<button class="icon-btn small" data-block title="' + (d.blocked ? 'Разблокировать' : 'Заблокировать') + '">' + ICON.ban + '</button></div>';
-      var notice = 'Личные сообщения видны только вам и собеседнику. Администрация может проверить переписку при жалобе или подозрении на нарушение закона.';
+        (d.other.online ? ' <i class="online-dot static" title="' + T('В сети') + '"></i>' : '') + '</a>' +
+        '<button class="icon-btn small" data-block title="' + (d.blocked ? T('Разблокировать') : T('Заблокировать')) + '">' + ICON.ban + '</button></div>';
+      var notice = T('Личные сообщения видны только вам и собеседнику. Администрация может проверить переписку при жалобе или подозрении на нарушение закона.');
       view.innerHTML = head + '<div class="chat-messages" data-msg-list></div>' +
-        (d.blocked ? '<div class="chat-login">Вы заблокировали этого пользователя. <button class="link-btn" data-block>Разблокировать</button></div>'
-          : composerHtml('Сообщение для ' + esc(d.other.username) + '…', notice));
+        (d.blocked ? '<div class="chat-login">' + T('Вы заблокировали этого пользователя.') + ' <button class="link-btn" data-block>' + T('Разблокировать') + '</button></div>'
+          : composerHtml(esc(T('Сообщение для {name}…', { name: d.other.username })), esc(notice)));
       var list = listEl();
-      if (!d.messages.length) list.innerHTML = '<div class="chat-empty">Начните переписку — напишите первое сообщение.</div>';
+      if (!d.messages.length) list.innerHTML = '<div class="chat-empty">' + T('Начните переписку — напишите первое сообщение.') + '</div>';
       appendMessages(list, d.messages, true);
       state.oldestId = d.messages.length >= 50 ? d.messages[0].id : null;
       bindComposer(function (text) { return api('POST', '/api/chat/conversations/' + id + '/messages', { body: text }); });
@@ -409,7 +410,7 @@
     } else if (state.open && state.tab === 'dm' && !state.conv) {
       refreshConversationList();
     } else if (!mine) {
-      toast('Сообщение от ' + m.sender.username, m.body.slice(0, 100));
+      toast(T('Сообщение от {name}', { name: m.sender.username }), m.body.slice(0, 100));
     }
   }
 
@@ -421,7 +422,7 @@
     var el = view.querySelector('[data-msg-id="' + d.id + '"]');
     if (!el) return;
     el.classList.add('deleted');
-    $('.msg-bubble', el).innerHTML = '<em>Сообщение удалено</em>';
+    $('.msg-bubble', el).innerHTML = '<em>' + T('Сообщение удалено') + '</em>';
     $$('.msg-act', el).forEach(function (b) { b.remove(); });
   }
 

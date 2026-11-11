@@ -1,49 +1,49 @@
 <%- include('../partials/header') %>
 <div class="container narrow page-pad">
-  <div class="breadcrumbs"><a href="/studio">Студия</a> / <a href="/studio/works/<%= work.id %>"><%= work.title %></a> / <span><%= chapter ? 'Глава ' + util.formatChapterNumber(chapter.number) : 'Новая глава' %></span></div>
-  <h1><%= chapter ? 'Редактирование главы' : 'Новая глава' %></h1>
+  <div class="breadcrumbs"><a href="/studio"><%= __('Студия') %></a> / <a href="/studio/works/<%= work.id %>"><%= work.title %></a> / <span><%= chapter ? __('Глава {n}', { n: util.formatChapterNumber(chapter.number) }) : __('Новая глава') %></span></div>
+  <h1><%= __(chapter ? 'Редактирование главы' : 'Новая глава') %></h1>
   <% if (errors.length) { %>
-    <div class="notice notice-error"><%- icon('info') %><ul><% errors.forEach(function (e) { %><li><%= e %></li><% }) %></ul></div>
+    <div class="notice notice-error"><%- icon('info') %><ul><% errors.forEach(function (e) { %><li><%= __(e) %></li><% }) %></ul></div>
   <% } %>
   <form method="post" enctype="multipart/form-data" action="<%= chapter ? '/studio/chapters/' + chapter.id + '/edit' : '/studio/works/' + work.id + '/chapters/new' %>" class="form panel" data-upload-form>
     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
     <div class="field-row cols-3">
-      <label class="field"><span>Том</span><input class="input" type="number" name="volume" min="0" value="<%= form.volume === null || form.volume === undefined ? '' : form.volume %>" placeholder="—"></label>
-      <label class="field"><span>Номер главы *</span><input class="input" name="number" value="<%= form.number === undefined ? '' : form.number %>" required inputmode="decimal" placeholder="12 или 12.5"></label>
+      <label class="field"><span><%= __('Том') %></span><input class="input" type="number" name="volume" min="0" value="<%= form.volume === null || form.volume === undefined ? '' : form.volume %>" placeholder="—"></label>
+      <label class="field"><span><%= __('Номер главы *') %></span><input class="input" name="number" value="<%= form.number === undefined ? '' : form.number %>" required inputmode="decimal" placeholder="<%= __('12 или 12.5') %>"></label>
       <% if (teams.length) { %>
-        <label class="field"><span>Команда</span>
+        <label class="field"><span><%= __('Команда') %></span>
           <select class="input select" name="team_id">
             <% teams.forEach(function (t) { %><option value="<%= t.id %>" <%= String(form.team_id) === String(t.id) ? 'selected' : '' %>><%= t.name %></option><% }) %>
           </select>
         </label>
       <% } %>
     </div>
-    <label class="field"><span>Название главы</span><input class="input" name="title" value="<%= form.title || '' %>" maxlength="200" placeholder="Необязательно"></label>
+    <label class="field"><span><%= __('Название главы') %></span><input class="input" name="title" value="<%= form.title || '' %>" maxlength="200" placeholder="<%= __('Необязательно') %>"></label>
 
     <div class="field">
-      <span>Страницы <%= chapter ? '(загрузите, чтобы заменить все текущие)' : '*' %></span>
+      <span><%= __('Страницы') %> <%= __(chapter ? '(загрузите, чтобы заменить все текущие)' : '*') %></span>
       <label class="dropzone" data-dropzone>
         <input type="file" name="pages" multiple accept="image/jpeg,image/png,image/webp,image/gif,image/avif" <%= chapter ? '' : 'required' %> data-pages-input>
         <%- icon('upload') %>
-        <strong>Перетащите изображения сюда или нажмите, чтобы выбрать</strong>
-        <span class="muted small">Порядок страниц — по именам файлов (1.jpg, 2.jpg … 10.jpg). До 500 файлов, до 20 МБ каждый.</span>
+        <strong><%= __('Перетащите изображения сюда или нажмите, чтобы выбрать') %></strong>
+        <span class="muted small"><%= __('Порядок страниц — по именам файлов (1.jpg, 2.jpg … 10.jpg). До 500 файлов, до 20 МБ каждый.') %></span>
       </label>
       <div class="pages-preview" data-pages-preview></div>
     </div>
 
     <% if (chapter && typeof pages !== 'undefined' && pages.length) { %>
       <details class="current-pages">
-        <summary>Текущие страницы (<%= pages.length %>)</summary>
+        <summary><%= __('Текущие страницы (') %><%= pages.length %>)</summary>
         <div class="pages-preview"><% pages.forEach(function (p) { %><figure><img src="<%= p.path %>" alt="" loading="lazy"><figcaption><%= p.idx %></figcaption></figure><% }) %></div>
       </details>
     <% } %>
 
-    <div class="upload-progress" data-upload-progress hidden><div class="upload-progress-fill"></div><span>Загрузка…</span></div>
+    <div class="upload-progress" data-upload-progress hidden><div class="upload-progress-fill"></div><span><%= __('Загрузка…') %></span></div>
 
     <div class="form-footer">
-      <a href="/studio/works/<%= work.id %>" class="btn btn-ghost">Отмена</a>
-      <% if (!chapter) { %><button class="btn btn-ghost" type="submit" name="another" value="1">Сохранить и добавить ещё</button><% } %>
-      <button class="btn btn-primary" type="submit"><%- icon('check') %><%= chapter ? 'Сохранить' : 'Загрузить главу' %></button>
+      <a href="/studio/works/<%= work.id %>" class="btn btn-ghost"><%= __('Отмена') %></a>
+      <% if (!chapter) { %><button class="btn btn-ghost" type="submit" name="another" value="1"><%= __('Сохранить и добавить ещё') %></button><% } %>
+      <button class="btn btn-primary" type="submit"><%- icon('check') %><%= __(chapter ? 'Сохранить' : 'Загрузить главу') %></button>
     </div>
   </form>
 </div>

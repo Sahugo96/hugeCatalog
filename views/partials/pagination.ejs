@@ -4,13 +4,13 @@
     var link = function (p) { var o = Object.assign({}, query, { page: p > 1 ? p : '' }); return buildUrl(base, o); };
     var from = Math.max(1, page - 2), to = Math.min(pages, page + 2);
 %>
-<nav class="pagination" aria-label="Страницы">
-  <% if (page > 1) { %><a class="page-link" href="<%= link(page - 1) %>" aria-label="Предыдущая"><%- icon('chevronLeft') %></a><% } %>
+<nav class="pagination" aria-label="<%= __('Страницы') %>">
+  <% if (page > 1) { %><a class="page-link" href="<%= link(page - 1) %>" aria-label="<%= __('Предыдущая') %>"><%- icon('chevronLeft') %></a><% } %>
   <% if (from > 1) { %><a class="page-link" href="<%= link(1) %>">1</a><% if (from > 2) { %><span class="page-gap">…</span><% } %><% } %>
   <% for (var p = from; p <= to; p++) { %>
     <% if (p === page) { %><span class="page-link current" aria-current="page"><%= p %></span><% } else { %><a class="page-link" href="<%= link(p) %>"><%= p %></a><% } %>
   <% } %>
   <% if (to < pages) { %><% if (to < pages - 1) { %><span class="page-gap">…</span><% } %><a class="page-link" href="<%= link(pages) %>"><%= pages %></a><% } %>
-  <% if (page < pages) { %><a class="page-link" href="<%= link(page + 1) %>" aria-label="Следующая"><%- icon('chevronRight') %></a><% } %>
+  <% if (page < pages) { %><a class="page-link" href="<%= link(page + 1) %>" aria-label="<%= __('Следующая') %>"><%- icon('chevronRight') %></a><% } %>
 </nav>
 <% } %>

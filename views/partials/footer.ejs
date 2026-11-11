@@ -4,44 +4,44 @@
   <div class="container footer-inner">
     <div class="footer-brand">
       <a href="/" class="logo"><span class="logo-mark">H</span><span class="logo-text"><%= SITE_NAME %></span></a>
-      <p class="muted">Каталог манги, манхвы и маньхуа. Переводы публикуют команды, прошедшие модерацию.</p>
+      <p class="muted"><%= __('Каталог манги, манхвы и маньхуа. Переводы публикуют команды, прошедшие модерацию.') %></p>
     </div>
-    <nav class="footer-links" aria-label="Нижнее меню">
+    <nav class="footer-links" aria-label="<%= __('Нижнее меню') %>">
       <div>
-        <h4>Навигация</h4>
-        <a href="/catalog">Каталог</a>
-        <a href="/catalog?sort=updated">Обновления</a>
-        <a href="/teams">Команды</a>
-        <a href="/random" rel="nofollow">Случайный тайтл</a>
+        <h4><%= __('Навигация') %></h4>
+        <a href="/catalog"><%= __('Каталог') %></a>
+        <a href="/catalog?sort=updated"><%= __('Обновления') %></a>
+        <a href="/teams"><%= __('Команды') %></a>
+        <a href="/random" rel="nofollow"><%= __('Случайный тайтл') %></a>
       </div>
       <div>
-        <h4>Участникам</h4>
-        <a href="/teams/new">Создать команду</a>
-        <a href="/studio">Студия загрузки</a>
-        <a href="/about#rules">Правила</a>
+        <h4><%= __('Участникам') %></h4>
+        <a href="/teams/new"><%= __('Создать команду') %></a>
+        <a href="/studio"><%= __('Студия загрузки') %></a>
+        <a href="/about#rules"><%= __('Правила') %></a>
       </div>
       <div>
-        <h4>Информация</h4>
-        <a href="/about">О сайте</a>
-        <a href="/privacy">Политика конфиденциальности</a>
+        <h4><%= __('Информация') %></h4>
+        <a href="/about"><%= __('О сайте') %></a>
+        <a href="/privacy"><%= __('Политика конфиденциальности') %></a>
       </div>
     </nav>
   </div>
-  <div class="container footer-bottom muted">© <%= new Date().getFullYear() %> <%= SITE_NAME %>. Все права на произведения принадлежат их авторам.</div>
+  <div class="container footer-bottom muted">© <%= new Date().getFullYear() %> <%= SITE_NAME %><%= __('. Все права на произведения принадлежат их авторам.') %></div>
 </footer>
 <% } %>
 <% if (typeof bodyClass === 'undefined' || bodyClass !== 'reader-page') { %>
 <div class="chat-widget" data-chat>
-  <button class="chat-fab" data-chat-toggle aria-label="Открыть чат" title="Чат" aria-expanded="false">
+  <button class="chat-fab" data-chat-toggle aria-label="<%= __('Открыть чат') %>" title="<%= __('Чат') %>" aria-expanded="false">
     <%- icon('chat') %><span class="dot-badge" data-chat-badge <%= counters.messages ? '' : 'hidden' %>><%= counters.messages %></span>
   </button>
-  <section class="chat-panel" data-chat-panel role="dialog" aria-label="Чат" hidden>
+  <section class="chat-panel" data-chat-panel role="dialog" aria-label="<%= __('Чат') %>" hidden>
     <header class="chat-head">
       <div class="chat-tabs" role="tablist">
-        <button role="tab" class="chat-tab" data-chat-tab="global">Общий <span class="online-pill" data-online hidden></span></button>
-        <button role="tab" class="chat-tab" data-chat-tab="dm">Личные <span class="count-badge" data-dm-badge <%= counters.messages ? '' : 'hidden' %>><%= counters.messages %></span></button>
+        <button role="tab" class="chat-tab" data-chat-tab="global"><%= __('Общий') %> <span class="online-pill" data-online hidden></span></button>
+        <button role="tab" class="chat-tab" data-chat-tab="dm"><%= __('Личные') %> <span class="count-badge" data-dm-badge <%= counters.messages ? '' : 'hidden' %>><%= counters.messages %></span></button>
       </div>
-      <button class="icon-btn small" data-chat-close aria-label="Свернуть чат"><%- icon('x') %></button>
+      <button class="icon-btn small" data-chat-close aria-label="<%= __('Свернуть чат') %>"><%- icon('x') %></button>
     </header>
     <div class="chat-body" data-chat-body></div>
   </section>

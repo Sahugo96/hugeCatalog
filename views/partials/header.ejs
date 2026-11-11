@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="ru">
+<html lang="<%= lang %>">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title><%= title ? title + ' — ' + SITE_NAME : SITE_NAME + ' — каталог манги, манхвы и маньхуа' %></title>
-  <meta name="description" content="<%= description || 'Читайте мангу, манхву и маньхуа онлайн. Удобный каталог с фильтрами, свежие главы каждый день.' %>">
+  <title><%= title ? __(title) + ' — ' + SITE_NAME : SITE_NAME + ' — ' + __('каталог манги, манхвы и маньхуа') %></title>
+  <meta name="description" content="<%= __(description || 'Читайте мангу, манхву и маньхуа онлайн. Удобный каталог с фильтрами, свежие главы каждый день.') %>">
   <meta property="og:site_name" content="<%= SITE_NAME %>">
-  <meta property="og:title" content="<%= title || SITE_NAME %>">
+  <meta property="og:title" content="<%= title ? __(title) : SITE_NAME %>">
   <% if (typeof ogImage !== 'undefined' && ogImage) { %><meta property="og:image" content="<%= ogImage %>"><% } %>
   <meta name="csrf-token" content="<%= csrfToken %>">
   <meta name="color-scheme" content="light dark">
@@ -20,44 +20,52 @@
     })();
   </script>
   <link rel="stylesheet" href="/static/css/style.css?v=<%= assetVersion %>">
+  <script>
+    window.LANG = '<%= lang %>';
+    window.I18N = <%- clientI18n ? JSON.stringify(clientI18n).replace(/</g, '\\u003c') : 'null' %>;
+    window.T = function (s, vars) {
+      var r = (window.I18N && window.I18N[s]) || s;
+      return vars ? r.replace(/\{(\w+)\}/g, function (m, k) { return vars[k] !== undefined ? vars[k] : m; }) : r;
+    };
+  </script>
   <link rel="stylesheet" href="/static/css/chat.css?v=<%= assetVersion %>">
   <script src="/static/js/app.js?v=<%= assetVersion %>" defer></script>
   <script src="/static/js/chat.js?v=<%= assetVersion %>" defer></script>
 </head>
 <body class="<%= typeof bodyClass !== 'undefined' ? bodyClass : '' %>" data-auth="<%= user ? '1' : '0' %>"<% if (user) { %> data-me-id="<%= user.id %>" data-me-name="<%= user.username %>" data-me-staff="<%= isStaff ? '1' : '0' %>"<% } %>>
 <% if (typeof bodyClass === 'undefined' || bodyClass !== 'reader-page') { %>
-<a class="skip-link" href="#main">Перейти к содержимому</a>
+<a class="skip-link" href="#main"><%= __('Перейти к содержимому') %></a>
 <header class="site-header">
   <div class="container header-inner">
-    <button class="icon-btn only-mobile" data-toggle="nav" aria-label="Меню" aria-expanded="false"><%- icon('menu') %></button>
-    <a href="/" class="logo" aria-label="<%= SITE_NAME %> — на главную">
+    <button class="icon-btn only-mobile" data-toggle="nav" aria-label="<%= __('Меню') %>" aria-expanded="false"><%- icon('menu') %></button>
+    <a href="/" class="logo" aria-label="<%= SITE_NAME %> — <%= __('на главную') %>">
       <span class="logo-mark">H</span><span class="logo-text"><%= SITE_NAME %></span>
     </a>
-    <nav class="main-nav" id="main-nav" aria-label="Основное меню">
-      <a href="/catalog" class="<%= currentPath.startsWith('/catalog') ? 'active' : '' %>"><%- icon('layers') %>Каталог</a>
-      <a href="/catalog?sort=updated" class=""><%- icon('clock') %>Обновления</a>
-      <a href="/teams" class="<%= currentPath.startsWith('/team') ? 'active' : '' %>"><%- icon('users') %>Команды</a>
-      <a href="/random" rel="nofollow"><%- icon('shuffle') %>Случайное</a>
+    <nav class="main-nav" id="main-nav" aria-label="<%= __('Основное меню') %>">
+      <a href="/catalog" class="<%= currentPath.startsWith('/catalog') ? 'active' : '' %>"><%- icon('layers') %><%= __('Каталог') %></a>
+      <a href="/catalog?sort=updated" class=""><%- icon('clock') %><%= __('Обновления') %></a>
+      <a href="/teams" class="<%= currentPath.startsWith('/team') ? 'active' : '' %>"><%- icon('users') %><%= __('Команды') %></a>
+      <a href="/random" rel="nofollow" class="nav-icon-only" title="<%= __('Случайное произведение') %>" aria-label="<%= __('Случайное произведение') %>"><%- icon('dice', 'dice') %><span class="nav-mobile-text"><%= __('Случайное') %></span></a>
     </nav>
     <form class="header-search" action="/catalog" method="get" role="search" autocomplete="off">
       <span class="header-search-icon"><%- icon('search') %></span>
-      <input type="search" name="q" placeholder="Поиск тайтлов и авторов…" aria-label="Поиск" data-quick-search value="<%= currentPath === '/catalog' && typeof filters !== 'undefined' ? filters.q : '' %>">
+      <input type="search" name="q" placeholder="<%= __('Поиск тайтлов и авторов…') %>" aria-label="<%= __('Поиск') %>" data-quick-search value="<%= currentPath === '/catalog' && typeof filters !== 'undefined' ? filters.q : '' %>">
       <div class="search-dropdown" hidden></div>
     </form>
     <div class="header-actions">
-      <button class="icon-btn only-mobile" data-toggle="search" aria-label="Поиск"><%- icon('search') %></button>
-      <button class="icon-btn theme-toggle" data-theme-toggle aria-label="Переключить тему" title="Дневная / ночная тема">
+      <button class="icon-btn only-mobile" data-toggle="search" aria-label="<%= __('Поиск') %>"><%- icon('search') %></button>
+      <button class="icon-btn theme-toggle" data-theme-toggle aria-label="<%= __('Переключить тему') %>" title="<%= __('Дневная / ночная тема') %>">
         <span class="theme-icon-light"><%- icon('sun') %></span><span class="theme-icon-dark"><%- icon('moon') %></span>
       </button>
       <% if (user) { %>
         <div class="dropdown notif-dropdown">
-          <button class="icon-btn notif-btn" data-dropdown data-notif-toggle aria-haspopup="true" aria-expanded="false" aria-label="Уведомления" title="Уведомления">
+          <button class="icon-btn notif-btn" data-dropdown data-notif-toggle aria-haspopup="true" aria-expanded="false" aria-label="<%= __('Уведомления') %>" title="<%= __('Уведомления') %>">
             <%- icon('bell') %><span class="dot-badge" data-notif-badge <%= counters.notifications ? '' : 'hidden' %>><%= counters.notifications > 99 ? '99+' : counters.notifications %></span>
           </button>
           <div class="dropdown-menu notif-menu" role="menu">
-            <div class="notif-head"><strong>Уведомления</strong><button class="link-btn small" data-notif-readall>Прочитать все</button></div>
-            <div class="notif-list" data-notif-list><div class="search-empty">Загрузка…</div></div>
-            <a class="notif-all" href="/notifications">Все уведомления</a>
+            <div class="notif-head"><strong><%= __('Уведомления') %></strong><button class="link-btn small" data-notif-readall><%= __('Прочитать все') %></button></div>
+            <div class="notif-list" data-notif-list><div class="search-empty"><%= __('Загрузка…') %></div></div>
+            <a class="notif-all" href="/notifications"><%= __('Все уведомления') %></a>
           </div>
         </div>
         <div class="dropdown">
@@ -66,27 +74,33 @@
             <span class="user-name"><%= user.username %></span><%- icon('chevronDown', 'small') %>
           </button>
           <div class="dropdown-menu" role="menu">
-            <a href="/profile" role="menuitem"><%- icon('bookmark') %>Избранное и история</a>
-            <a href="/notifications" role="menuitem"><%- icon('bell') %>Уведомления</a>
-            <button type="button" role="menuitem" data-chat-open="dm"><%- icon('chat') %>Личные сообщения</button>
-            <a href="/studio" role="menuitem"><%- icon('upload') %>Студия</a>
+            <a href="/profile" role="menuitem"><%- icon('bookmark') %><%= __('Избранное и история') %></a>
+            <a href="/notifications" role="menuitem"><%- icon('bell') %><%= __('Уведомления') %></a>
+            <button type="button" role="menuitem" data-chat-open="dm"><%- icon('chat') %><%= __('Личные сообщения') %></button>
+            <a href="/studio" role="menuitem"><%- icon('upload') %><%= __('Студия') %></a>
             <% if (myTeams.length) { %>
-              <div class="dropdown-label">Мои команды</div>
+              <div class="dropdown-label"><%= __('Мои команды') %></div>
               <% myTeams.forEach(function (t) { %><a href="/team/<%= t.slug %>" role="menuitem"><%- icon('users') %><%= t.name %></a><% }) %>
             <% } else { %>
-              <a href="/teams/new" role="menuitem"><%- icon('plus') %>Создать команду</a>
+              <a href="/teams/new" role="menuitem"><%- icon('plus') %><%= __('Создать команду') %></a>
             <% } %>
-            <% if (isStaff) { %><a href="/admin" role="menuitem"><%- icon('shield') %>Админ-панель</a><% } %>
-            <a href="/settings" role="menuitem"><%- icon('settings') %>Настройки</a>
+            <% if (isStaff) { %><a href="/admin" role="menuitem"><%- icon('shield') %><%= __('Админ-панель') %></a><% } %>
+            <a href="/settings" role="menuitem"><%- icon('settings') %><%= __('Настройки') %></a>
+            <div class="dropdown-label"><%= __('Язык сайта') %></div>
+            <div class="lang-menu" role="group" aria-label="<%= __('Язык сайта') %>">
+              <% [['ru', 'Русский'], ['en', 'English']].forEach(function (l) { %>
+                <a href="/lang/<%= l[0] %>?back=<%= encodeURIComponent(currentUrl) %>" role="menuitemradio" aria-checked="<%= lang === l[0] %>" lang="<%= l[0] %>" hreflang="<%= l[0] %>" class="<%= lang === l[0] ? 'current' : '' %>"><%- flag(l[0]) %><span><%= l[1] %></span><% if (lang === l[0]) { %><%- icon('check', 'small lang-check') %><% } %></a>
+              <% }) %>
+            </div>
             <form action="/logout" method="post">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-              <button type="submit" role="menuitem"><%- icon('logout') %>Выйти</button>
+              <button type="submit" role="menuitem"><%- icon('logout') %><%= __('Выйти') %></button>
             </form>
           </div>
         </div>
       <% } else { %>
-        <a href="/login" class="btn btn-ghost btn-sm hide-xs">Войти</a>
-        <a href="/register" class="btn btn-primary btn-sm">Регистрация</a>
+        <a href="/login" class="btn btn-ghost btn-sm hide-xs"><%= __('Войти') %></a>
+        <a href="/register" class="btn btn-primary btn-sm"><%= __('Регистрация') %></a>
       <% } %>
     </div>
   </div>
@@ -96,7 +110,7 @@
 <% if (flash && flash.length) { %>
   <div class="flash-stack" role="status">
     <% flash.forEach(function (f) { %>
-      <div class="flash flash-<%= f.type %>"><span><%= f.message %></span><button class="flash-close" aria-label="Закрыть">&times;</button></div>
+      <div class="flash flash-<%= f.type %>"><span><%= __(f.message) %></span><button class="flash-close" aria-label="<%= __('Закрыть') %>">&times;</button></div>
     <% }) %>
   </div>
 <% } %>

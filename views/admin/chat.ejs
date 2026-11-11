@@ -3,48 +3,48 @@
   var muteForm = function (userId, back) {
     return '<form method="post" action="/admin/chat/mute/' + userId + '" class="inline-form mute-form">' +
       '<input type="hidden" name="_csrf" value="' + csrfToken + '"><input type="hidden" name="back" value="' + back + '">' +
-      '<select class="input input-sm select" name="hours"><option value="1">1 час</option><option value="24">1 день</option><option value="168">7 дней</option><option value="720">30 дней</option><option value="87600">навсегда</option><option value="0">снять</option></select>' +
-      '<button class="btn btn-ghost btn-sm">Запрет писать</button></form>';
+      '<select class="input input-sm select" name="hours"><option value="1">' + __('1 час') + '</option><option value="24">' + __('1 день') + '</option><option value="168">' + __('7 дней') + '</option><option value="720">' + __('30 дней') + '</option><option value="87600">' + __('навсегда') + '</option><option value="0">' + __('снять') + '</option></select>' +
+      '<button class="btn btn-ghost btn-sm">' + __('Запрет писать') + '</button></form>';
   };
   var back = currentUrl;
 %>
 <div class="container page-pad">
-  <h1>Модерация чата</h1>
+  <h1><%= __('Модерация чата') %></h1>
   <%- include('../partials/admin-nav') %>
 
   <div class="pills">
-    <a class="pill <%= tab === 'reports' ? 'active' : '' %>" href="?tab=reports">Жалобы<% if (openReports) { %> <span class="count-badge"><%= openReports %></span><% } %></a>
-    <a class="pill <%= tab === 'global' ? 'active' : '' %>" href="?tab=global">Общий чат</a>
+    <a class="pill <%= tab === 'reports' ? 'active' : '' %>" href="?tab=reports"><%= __('Жалобы') %><% if (openReports) { %> <span class="count-badge"><%= openReports %></span><% } %></a>
+    <a class="pill <%= tab === 'global' ? 'active' : '' %>" href="?tab=global"><%= __('Общий чат') %></a>
     <% if (isAdmin) { %>
-      <a class="pill <%= tab === 'dms' ? 'active' : '' %>" href="?tab=dms">Личные переписки</a>
-      <a class="pill <%= tab === 'search' ? 'active' : '' %>" href="?tab=search">Поиск по сообщениям</a>
-      <a class="pill <%= tab === 'log' ? 'active' : '' %>" href="?tab=log">Журнал модерации</a>
+      <a class="pill <%= tab === 'dms' ? 'active' : '' %>" href="?tab=dms"><%= __('Личные переписки') %></a>
+      <a class="pill <%= tab === 'search' ? 'active' : '' %>" href="?tab=search"><%= __('Поиск по сообщениям') %></a>
+      <a class="pill <%= tab === 'log' ? 'active' : '' %>" href="?tab=log"><%= __('Журнал модерации') %></a>
     <% } %>
   </div>
 
   <% if (tab === 'reports') { %>
-    <% if (!reports.length) { %><div class="empty empty-lg"><%- icon('check') %><p>Открытых жалоб нет.</p></div><% } %>
+    <% if (!reports.length) { %><div class="empty empty-lg"><%- icon('check') %><p><%= __('Открытых жалоб нет.') %></p></div><% } %>
     <div class="mod-list">
       <% reports.forEach(function (r) { %>
         <article class="mod-item">
           <div class="grow">
             <p class="muted small">
-              <strong><%= r.reporter %></strong> пожаловался(-ась) <%= util.timeAgo(r.created_at) %><% if (r.reports_count > 1) { %> · всего жалоб: <%= r.reports_count %><% } %>
-              · <%= r.conversation_id ? 'личное сообщение' : 'общий чат' %>
+              <strong><%= r.reporter %></strong> <%= __('пожаловался(-ась)') %> <%= util.timeAgo(r.created_at) %><% if (r.reports_count > 1) { %> <%= __('· всего жалоб:') %> <%= r.reports_count %><% } %>
+              · <%= __(r.conversation_id ? 'личное сообщение' : 'общий чат') %>
             </p>
-            <% if (r.reason) { %><p class="small">Причина: <%= r.reason %></p><% } %>
+            <% if (r.reason) { %><p class="small"><%= __('Причина:') %> <%= r.reason %></p><% } %>
             <blockquote class="chat-quote <%= r.deleted_at ? 'is-deleted' : '' %>">
               <strong><a href="/user/<%= encodeURIComponent(r.sender) %>"><%= r.sender %></a></strong>
               <span class="muted small"><%= util.formatDate(r.message_at) %></span>
               <div><%= r.body %></div>
             </blockquote>
-            <% if (r.conversation_id && isAdmin) { %><a class="small" href="/admin/chat/conversations/<%= r.conversation_id %>#m<%= r.message_id %>">Открыть переписку целиком</a><% } %>
+            <% if (r.conversation_id && isAdmin) { %><a class="small" href="/admin/chat/conversations/<%= r.conversation_id %>#m<%= r.message_id %>"><%= __('Открыть переписку целиком') %></a><% } %>
           </div>
           <div class="mod-actions">
             <% if (!r.deleted_at) { %>
-              <form method="post" action="/admin/chat/messages/<%= r.message_id %>/delete"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="back" value="<%= back %>"><button class="btn btn-danger btn-sm"><%- icon('trash') %>Удалить сообщение</button></form>
+              <form method="post" action="/admin/chat/messages/<%= r.message_id %>/delete"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="back" value="<%= back %>"><button class="btn btn-danger btn-sm"><%- icon('trash') %><%= __('Удалить сообщение') %></button></form>
             <% } %>
-            <form method="post" action="/admin/chat/reports/<%= r.id %>/resolve"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-ghost btn-sm"><%- icon('check') %>Нарушения нет</button></form>
+            <form method="post" action="/admin/chat/reports/<%= r.id %>/resolve"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-ghost btn-sm"><%- icon('check') %><%= __('Нарушения нет') %></button></form>
             <%- muteForm(r.sender_id, back) %>
           </div>
         </article>
@@ -56,13 +56,13 @@
     <% if (tab === 'search') { %>
       <form method="get" class="inline-form panel">
         <input type="hidden" name="tab" value="search">
-        <input class="input input-sm" type="search" name="q" value="<%= search %>" placeholder="Текст сообщения">
-        <input class="input input-sm" name="user" value="<%= userFilter %>" placeholder="Отправитель (имя)">
-        <button class="btn btn-primary btn-sm"><%- icon('search') %>Найти</button>
+        <input class="input input-sm" type="search" name="q" value="<%= search %>" placeholder="<%= __('Текст сообщения') %>">
+        <input class="input input-sm" name="user" value="<%= userFilter %>" placeholder="<%= __('Отправитель (имя)') %>">
+        <button class="btn btn-primary btn-sm"><%- icon('search') %><%= __('Найти') %></button>
       </form>
-      <p class="muted small">Поиск идёт по общему чату и личным сообщениям. Каждый поиск записывается в журнал модерации.</p>
+      <p class="muted small"><%= __('Поиск идёт по общему чату и личным сообщениям. Каждый поиск записывается в журнал модерации.') %></p>
     <% } %>
-    <% if (!messages.length) { %><div class="empty"><%= tab === 'search' && !search && !userFilter ? 'Введите запрос.' : 'Сообщений нет.' %></div><% } %>
+    <% if (!messages.length) { %><div class="empty"><%= __(tab === 'search' && !search && !userFilter ? 'Введите запрос.' : 'Сообщений нет.') %></div><% } %>
     <div class="table-wrap">
       <table class="table">
         <tbody>
@@ -70,12 +70,12 @@
             <tr class="<%= m.deleted_at ? 'row-banned' : '' %>">
               <td class="nowrap small muted"><%= util.formatDate(m.created_at) %> <%= m.created_at.slice(11, 16) %></td>
               <td class="nowrap"><a href="/user/<%= encodeURIComponent(m.username) %>"><%= m.username %></a></td>
-              <td class="chat-cell"><%= m.body %><% if (m.deleted_at) { %> <span class="status status-rejected">удалено</span><% } %>
-                <% if (m.conversation_id) { %><a class="small" href="/admin/chat/conversations/<%= m.conversation_id %>#m<%= m.id %>"> · переписка</a><% } %>
+              <td class="chat-cell"><%= m.body %><% if (m.deleted_at) { %> <span class="status status-rejected"><%= __('удалено') %></span><% } %>
+                <% if (m.conversation_id) { %><a class="small" href="/admin/chat/conversations/<%= m.conversation_id %>#m<%= m.id %>"> <%= __('· переписка') %></a><% } %>
               </td>
               <td class="table-actions">
                 <% if (!m.deleted_at) { %>
-                  <form method="post" action="/admin/chat/messages/<%= m.id %>/delete" data-confirm="Удалить сообщение?"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="back" value="<%= back %>"><button class="icon-btn small danger" title="Удалить" aria-label="Удалить"><%- icon('trash') %></button></form>
+                  <form method="post" action="/admin/chat/messages/<%= m.id %>/delete" data-confirm="<%= __('Удалить сообщение?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="back" value="<%= back %>"><button class="icon-btn small danger" title="<%= __('Удалить') %>" aria-label="<%= __('Удалить') %>"><%- icon('trash') %></button></form>
                 <% } %>
               </td>
             </tr>
@@ -86,23 +86,23 @@
   <% } %>
 
   <% if (tab === 'dms') { %>
-    <div class="notice notice-warn"><%- icon('shield') %><div>Личные переписки открывайте только для проверки жалоб и нарушений. Каждый просмотр записывается в журнал модерации.</div></div>
+    <div class="notice notice-warn"><%- icon('shield') %><div><%= __('Личные переписки открывайте только для проверки жалоб и нарушений. Каждый просмотр записывается в журнал модерации.') %></div></div>
     <form method="get" class="inline-form" style="margin-bottom: 14px">
       <input type="hidden" name="tab" value="dms">
-      <input class="input input-sm" name="user" value="<%= userFilter %>" placeholder="Участник (имя пользователя)">
-      <button class="btn btn-ghost btn-sm">Фильтр</button>
+      <input class="input input-sm" name="user" value="<%= userFilter %>" placeholder="<%= __('Участник (имя пользователя)') %>">
+      <button class="btn btn-ghost btn-sm"><%= __('Фильтр') %></button>
     </form>
-    <% if (!conversations.length) { %><div class="empty">Переписок нет.</div><% } %>
+    <% if (!conversations.length) { %><div class="empty"><%= __('Переписок нет.') %></div><% } %>
     <div class="table-wrap">
       <table class="table">
-        <thead><tr><th>Участники</th><th>Сообщений</th><th>Последнее</th><th></th></tr></thead>
+        <thead><tr><th><%= __('Участники') %></th><th><%= __('Сообщений') %></th><th><%= __('Последнее') %></th><th></th></tr></thead>
         <tbody>
           <% conversations.forEach(function (c) { %>
             <tr>
               <td><%= c.a_name %> ↔ <%= c.b_name %></td>
               <td><%= c.n %></td>
               <td class="nowrap"><%= util.timeAgo(c.last_message_at) %></td>
-              <td class="table-actions"><a class="btn btn-ghost btn-sm" href="/admin/chat/conversations/<%= c.id %>">Открыть</a></td>
+              <td class="table-actions"><a class="btn btn-ghost btn-sm" href="/admin/chat/conversations/<%= c.id %>"><%= __('Открыть') %></a></td>
             </tr>
           <% }) %>
         </tbody>
@@ -113,22 +113,22 @@
   <% if (tab === 'log') { %>
     <div class="table-wrap">
       <table class="table">
-        <thead><tr><th>Когда</th><th>Кто</th><th>Действие</th><th>Объект</th><th>Подробности</th></tr></thead>
+        <thead><tr><th><%= __('Когда') %></th><th><%= __('Кто') %></th><th><%= __('Действие') %></th><th><%= __('Объект') %></th><th><%= __('Подробности') %></th></tr></thead>
         <tbody>
           <% var actions = { view_conversation: 'просмотр переписки', search_messages: 'поиск по сообщениям', delete_message: 'удаление сообщения', dismiss_report: 'жалоба отклонена', mute: 'запрет писать', unmute: 'снят запрет' }; %>
           <% log.forEach(function (l) { %>
             <tr>
               <td class="nowrap small"><%= util.formatDate(l.created_at) %> <%= l.created_at.slice(11, 16) %></td>
               <td><%= l.actor || '—' %></td>
-              <td><%= actions[l.action] || l.action %></td>
+              <td><%= __(actions[l.action] || l.action) %></td>
               <td class="small"><%= l.target %></td>
-              <td class="small muted"><%= l.details %></td>
+              <td class="small muted"><%= __(l.details) %></td>
             </tr>
           <% }) %>
         </tbody>
       </table>
     </div>
-    <% if (!log.length) { %><div class="empty">Журнал пуст.</div><% } %>
+    <% if (!log.length) { %><div class="empty"><%= __('Журнал пуст.') %></div><% } %>
   <% } %>
 </div>
 <%- include('../partials/footer') %>

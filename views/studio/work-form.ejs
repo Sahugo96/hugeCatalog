@@ -4,16 +4,16 @@
   var selGenres = sel(form.genres), selTags = sel(form.tags);
 %>
 <div class="container narrow page-pad">
-  <div class="breadcrumbs"><a href="/studio">Студия</a><% if (work) { %> / <a href="/studio/works/<%= work.id %>"><%= work.title %></a><% } %> / <span><%= work ? 'Редактирование' : 'Новый тайтл' %></span></div>
-  <h1><%= work ? 'Редактирование тайтла' : 'Новый тайтл' %></h1>
+  <div class="breadcrumbs"><a href="/studio"><%= __('Студия') %></a><% if (work) { %> / <a href="/studio/works/<%= work.id %>"><%= work.title %></a><% } %> / <span><%= __(work ? 'Редактирование' : 'Новый тайтл') %></span></div>
+  <h1><%= __(work ? 'Редактирование тайтла' : 'Новый тайтл') %></h1>
   <% if (!work && !isStaff) { %>
-    <div class="notice notice-info"><%- icon('info') %><div>После сохранения тайтл уйдёт на модерацию. Пока он на проверке, вы можете загружать главы — они станут видны читателям вместе с одобрением.</div></div>
+    <div class="notice notice-info"><%- icon('info') %><div><%= __('После сохранения тайтл уйдёт на модерацию. Пока он на проверке, вы можете загружать главы — они станут видны читателям вместе с одобрением.') %></div></div>
   <% } %>
   <% if (typeof source !== 'undefined' && source) { %>
-    <div class="notice notice-info"><%- flag(source.language) %><div>Новая языковая версия произведения <a href="/title/<%= source.slug %>" target="_blank">«<%= source.title %>»</a>. Авторы, жанры, теги и описание скопированы — переведите название и описание. После сохранения версии будут связаны автоматически.</div></div>
+    <div class="notice notice-info"><%- flag(source.language) %><div><%= __('Новая языковая версия произведения') %> <a href="/title/<%= source.slug %>" target="_blank">«<%= source.title %>»</a><%= __('. Авторы, жанры, теги и описание скопированы — переведите название и описание. После сохранения версии будут связаны автоматически.') %></div></div>
   <% } %>
   <% if (errors.length) { %>
-    <div class="notice notice-error"><%- icon('info') %><ul><% errors.forEach(function (e) { %><li><%= e %></li><% }) %></ul></div>
+    <div class="notice notice-error"><%- icon('info') %><ul><% errors.forEach(function (e) { %><li><%= __(e) %></li><% }) %></ul></div>
   <% } %>
 
   <form method="post" enctype="multipart/form-data" action="<%= work ? '/studio/works/' + work.id + '/edit' : '/studio/works/new' %>" class="form" data-unsaved-warning>
@@ -21,95 +21,95 @@
     <% if (!work && form.link_to) { %><input type="hidden" name="link_to" value="<%= form.link_to %>"><% } %>
 
     <div class="panel">
-      <h2 class="h3">Основное</h2>
+      <h2 class="h3"><%= __('Основное') %></h2>
       <div class="cover-field">
         <label class="cover-drop">
           <img data-cover-preview <% if (work && work.cover) { %>src="<%= work.cover %>"<% } else { %>hidden<% } %> alt="">
-          <span class="cover-drop-hint" <%= work && work.cover ? 'hidden' : '' %>><%- icon('upload') %>Обложка<br><small>jpg, png, webp · до 8 МБ</small></span>
+          <span class="cover-drop-hint" <%= work && work.cover ? 'hidden' : '' %>><%- icon('upload') %><%= __('Обложка') %><br><small><%= __('jpg, png, webp · до 8 МБ') %></small></span>
           <input type="file" name="cover" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" <%= work || (typeof source !== 'undefined' && source) ? '' : 'required' %> data-image-preview>
         </label>
         <div class="grow">
           <label class="field">
-            <span>Название<%= typeof source !== 'undefined' && source ? ' на языке этой версии' : '' %> *</span>
+            <span><%= __('Название') %><%= __(typeof source !== 'undefined' && source ? ' на языке этой версии' : '') %> *</span>
             <input class="input" name="title" value="<%= form.title || '' %>" required maxlength="200">
           </label>
           <% if (typeof source !== 'undefined' && source && source.cover) { %>
             <label class="check" style="margin-bottom: 12px">
               <input type="checkbox" name="reuse_cover" value="1" <%= form.reuse_cover !== undefined || !errors.length ? 'checked' : '' %>>
-              <span>Если не загружу свою — взять обложку версии «<%= source.title %>»</span>
+              <span><%= __('Если не загружу свою — взять обложку версии «{title}»', { title: source.title }) %></span>
             </label>
           <% } %>
           <label class="field">
-            <span>Альтернативные названия</span>
-            <textarea class="input" name="alt_titles" rows="3" maxlength="1000" placeholder="По одному на строку: оригинальное, английское…"><%= form.alt_titles || '' %></textarea>
+            <span><%= __('Альтернативные названия') %></span>
+            <textarea class="input" name="alt_titles" rows="3" maxlength="1000" placeholder="<%= __('По одному на строку: оригинальное, английское…') %>"><%= form.alt_titles || '' %></textarea>
           </label>
         </div>
       </div>
       <% if (teams.length || isStaff) { %>
         <label class="field">
-          <span>Команда<%= isStaff ? '' : ' *' %></span>
+          <span><%= __('Команда') %><%= isStaff ? '' : ' *' %></span>
           <select class="input select" name="team_id" <%= isStaff ? '' : 'required' %>>
-            <% if (isStaff) { %><option value="">— без команды (от администрации) —</option><% } %>
+            <% if (isStaff) { %><option value=""><%= __('— без команды (от администрации) —') %></option><% } %>
             <% teams.forEach(function (t) { %><option value="<%= t.id %>" <%= String(form.team_id) === String(t.id) ? 'selected' : '' %>><%= t.name %></option><% }) %>
           </select>
         </label>
       <% } %>
       <label class="field">
-        <span>Описание</span>
-        <textarea class="input" name="description" rows="7" maxlength="10000" placeholder="О чём это произведение? Описание также используется для подбора похожих по сюжету."><%= form.description || '' %></textarea>
+        <span><%= __('Описание') %></span>
+        <textarea class="input" name="description" rows="7" maxlength="10000" placeholder="<%= __('О чём это произведение? Описание также используется для подбора похожих по сюжету.') %>"><%= form.description || '' %></textarea>
       </label>
     </div>
 
     <div class="panel">
-      <h2 class="h3">Авторы</h2>
+      <h2 class="h3"><%= __('Авторы') %></h2>
       <div class="field-row">
         <label class="field">
-          <span>Автор (сценарий) *</span>
-          <input class="input" name="story_authors" value="<%= form.story_authors || '' %>" required placeholder="Через запятую" list="authors-datalist" data-author-input>
+          <span><%= __('Автор (сценарий) *') %></span>
+          <input class="input" name="story_authors" value="<%= form.story_authors || '' %>" required placeholder="<%= __('Через запятую') %>" list="authors-datalist" data-author-input>
         </label>
         <label class="field">
-          <span>Художник</span>
-          <input class="input" name="artists" value="<%= form.artists || '' %>" placeholder="Если отличается от автора" list="authors-datalist" data-author-input>
+          <span><%= __('Художник') %></span>
+          <input class="input" name="artists" value="<%= form.artists || '' %>" placeholder="<%= __('Если отличается от автора') %>" list="authors-datalist" data-author-input>
         </label>
       </div>
       <datalist id="authors-datalist"></datalist>
-      <p class="muted small">Художник используется для подбора похожих тайтлов «по рисовке».</p>
+      <p class="muted small"><%= __('Художник используется для подбора похожих тайтлов «по рисовке».') %></p>
     </div>
 
     <div class="panel">
-      <h2 class="h3">Характеристики</h2>
+      <h2 class="h3"><%= __('Характеристики') %></h2>
       <div class="field-row cols-3">
         <label class="field">
-          <span>Тип *</span>
+          <span><%= __('Тип *') %></span>
           <select class="input select" name="type" required>
-            <% C.TYPES.forEach(function (t) { %><option value="<%= t.value %>" <%= form.type === t.value ? 'selected' : '' %>><%= t.label %></option><% }) %>
+            <% C.TYPES.forEach(function (t) { %><option value="<%= t.value %>" <%= form.type === t.value ? 'selected' : '' %>><%= __(t.label) %></option><% }) %>
           </select>
         </label>
         <label class="field">
-          <span>Язык этой версии *</span>
+          <span><%= __('Язык этой версии *') %></span>
           <select class="input select" name="language" required>
-            <% C.LANGUAGES.forEach(function (l) { %><option value="<%= l.value %>" <%= form.language === l.value ? 'selected' : '' %>><%= l.label %></option><% }) %>
+            <% C.LANGUAGES.forEach(function (l) { %><option value="<%= l.value %>" <%= form.language === l.value ? 'selected' : '' %>><%= __(l.label) %></option><% }) %>
           </select>
         </label>
         <label class="field">
-          <span>Год начала</span>
-          <input class="input" type="number" name="year" min="1900" max="<%= new Date().getFullYear() + 1 %>" value="<%= form.year || '' %>" placeholder="напр. 2018">
+          <span><%= __('Год начала') %></span>
+          <input class="input" type="number" name="year" min="1900" max="<%= new Date().getFullYear() + 1 %>" value="<%= form.year || '' %>" placeholder="<%= __('напр. 2018') %>">
         </label>
       </div>
       <div class="field-row">
         <div class="field">
-          <span>Статус *</span>
+          <span><%= __('Статус *') %></span>
           <div class="pill-radio">
             <% C.STATUSES.forEach(function (s) { %>
-              <label><input type="radio" name="status" value="<%= s.value %>" <%= form.status === s.value ? 'checked' : '' %> required><span><%= s.label %></span></label>
+              <label><input type="radio" name="status" value="<%= s.value %>" <%= form.status === s.value ? 'checked' : '' %> required><span><%= __(s.label) %></span></label>
             <% }) %>
           </div>
         </div>
         <div class="field">
-          <span>Возрастной рейтинг *</span>
+          <span><%= __('Возрастной рейтинг *') %></span>
           <div class="pill-radio">
             <% C.AGE_RATINGS.forEach(function (a) { %>
-              <label><input type="radio" name="age_rating" value="<%= a.value %>" <%= form.age_rating === a.value ? 'checked' : '' %> required><span><%= a.label %></span></label>
+              <label><input type="radio" name="age_rating" value="<%= a.value %>" <%= form.age_rating === a.value ? 'checked' : '' %> required><span><%= __(a.label) %></span></label>
             <% }) %>
           </div>
         </div>
@@ -117,26 +117,26 @@
     </div>
 
     <div class="panel">
-      <h2 class="h3">Жанры * <span class="muted small" data-checked-count="genres-box"></span></h2>
-      <input type="search" class="input input-sm filter-search" placeholder="Найти жанр…" data-filter-search="genres-box">
+      <h2 class="h3"><%= __('Жанры *') %> <span class="muted small" data-checked-count="genres-box"></span></h2>
+      <input type="search" class="input input-sm filter-search" placeholder="<%= __('Найти жанр…') %>" data-filter-search="genres-box">
       <div class="check-chips" id="genres-box">
         <% genres.forEach(function (g) { %>
-          <label class="check-chip"><input type="checkbox" name="genres" value="<%= g.id %>" <%= selGenres.indexOf(String(g.id)) >= 0 ? 'checked' : '' %>><span><%= g.name %></span></label>
+          <label class="check-chip"><input type="checkbox" name="genres" value="<%= g.id %>" <%= selGenres.indexOf(String(g.id)) >= 0 ? 'checked' : '' %>><span><%= __(g.name) %></span></label>
         <% }) %>
       </div>
     </div>
 
     <div class="panel">
-      <h2 class="h3">Теги <span class="muted small" data-checked-count="tags-box"></span></h2>
-      <p class="muted small">Теги из группы «Рисовка» помогают находить похожие по стилю, «Сюжет» — по сюжету.</p>
-      <input type="search" class="input input-sm filter-search" placeholder="Найти тег…" data-filter-search="tags-box">
+      <h2 class="h3"><%= __('Теги') %> <span class="muted small" data-checked-count="tags-box"></span></h2>
+      <p class="muted small"><%= __('Теги из группы «Рисовка» помогают находить похожие по стилю, «Сюжет» — по сюжету.') %></p>
+      <input type="search" class="input input-sm filter-search" placeholder="<%= __('Найти тег…') %>" data-filter-search="tags-box">
       <div id="tags-box">
         <% tagGroups.forEach(function (g) { %>
           <div class="tag-block">
-            <div class="filter-title"><%= g.group %></div>
+            <div class="filter-title"><%= __(g.group) %></div>
             <div class="check-chips">
               <% g.tags.forEach(function (t) { %>
-                <label class="check-chip"><input type="checkbox" name="tags" value="<%= t.id %>" <%= selTags.indexOf(String(t.id)) >= 0 ? 'checked' : '' %>><span><%= t.name %></span></label>
+                <label class="check-chip"><input type="checkbox" name="tags" value="<%= t.id %>" <%= selTags.indexOf(String(t.id)) >= 0 ? 'checked' : '' %>><span><%= __(t.name) %></span></label>
               <% }) %>
             </div>
           </div>
@@ -145,8 +145,8 @@
     </div>
 
     <div class="form-footer">
-      <a href="<%= work ? '/studio/works/' + work.id : '/studio' %>" class="btn btn-ghost">Отмена</a>
-      <button class="btn btn-primary" type="submit"><%- icon('check') %><%= work ? 'Сохранить' : (isStaff ? 'Опубликовать' : 'Отправить на модерацию') %></button>
+      <a href="<%= work ? '/studio/works/' + work.id : '/studio' %>" class="btn btn-ghost"><%= __('Отмена') %></a>
+      <button class="btn btn-primary" type="submit"><%- icon('check') %><%= __(work ? 'Сохранить' : (isStaff ? 'Опубликовать' : 'Отправить на модерацию')) %></button>
     </div>
   </form>
 </div>

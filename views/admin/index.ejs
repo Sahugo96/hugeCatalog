@@ -1,15 +1,15 @@
 <%- include('../partials/header') %>
 <div class="container page-pad">
-  <h1>Админ-панель</h1>
+  <h1><%= __('Админ-панель') %></h1>
   <%- include('../partials/admin-nav') %>
   <div class="dash-grid">
-    <a class="dash-card <%= counts.pending_works ? 'attention' : '' %>" href="/admin/works"><strong><%= counts.pending_works %></strong><span>тайтлов ждут модерации</span></a>
-    <a class="dash-card <%= counts.pending_teams ? 'attention' : '' %>" href="/admin/teams"><strong><%= counts.pending_teams %></strong><span>заявок от команд</span></a>
-    <a class="dash-card <%= counts.open_reports ? 'attention' : '' %>" href="/admin/chat?tab=reports"><strong><%= counts.open_reports %></strong><span>жалоб в чате</span></a>
-    <div class="dash-card"><strong><%= counts.works %></strong><span>опубликованных тайтлов</span></div>
-    <div class="dash-card"><strong><%= counts.chapters %></strong><span>глав (+<%= counts.new_chapters %> за сутки)</span></div>
-    <div class="dash-card"><strong><%= counts.users %></strong><span>пользователей (+<%= counts.new_users %> за сутки)</span></div>
-    <div class="dash-card"><strong><%= counts.views_today %></strong><span>прочтений глав сегодня</span></div>
+    <a class="dash-card <%= counts.pending_works ? 'attention' : '' %>" href="/admin/works"><strong><%= counts.pending_works %></strong><span><%= __('тайтлов ждут модерации') %></span></a>
+    <a class="dash-card <%= counts.pending_teams ? 'attention' : '' %>" href="/admin/teams"><strong><%= counts.pending_teams %></strong><span><%= __('заявок от команд') %></span></a>
+    <a class="dash-card <%= counts.open_reports ? 'attention' : '' %>" href="/admin/chat?tab=reports"><strong><%= counts.open_reports %></strong><span><%= __('жалоб в чате') %></span></a>
+    <div class="dash-card"><strong><%= counts.works %></strong><span><%= __('опубликованных тайтлов') %></span></div>
+    <div class="dash-card"><strong><%= counts.chapters %></strong><span><%= __('глав (+') %><%= counts.new_chapters %> <%= __('за сутки)') %></span></div>
+    <div class="dash-card"><strong><%= counts.users %></strong><span><%= __('пользователей (+') %><%= counts.new_users %> <%= __('за сутки)') %></span></div>
+    <div class="dash-card"><strong><%= counts.views_today %></strong><span><%= __('прочтений глав сегодня') %></span></div>
   </div>
 </div>
 <%- include('../partials/footer') %>

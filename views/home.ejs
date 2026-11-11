@@ -9,15 +9,15 @@
         <div class="container hero-inner">
           <a href="/title/<%= w.slug %>" class="hero-cover <%= w.age_rating === '18+' ? 'is-adult' : '' %>"><img src="<%= w.cover %>" alt="<%= w.title %>"></a>
           <div class="hero-text">
-            <div class="hero-kicker"><%- icon('fire', 'small') %>Популярное · <%- flag(w.language) %> <%= labelOf(C.TYPES, w.type) %><% if (w.year) { %> · <%= w.year %><% } %></div>
+            <div class="hero-kicker"><%- icon('fire', 'small') %><%= __('Популярное ·') %> <%- flag(w.language) %> <%= labelOf(C.TYPES, w.type) %><% if (w.year) { %> · <%= w.year %><% } %></div>
             <h2 class="hero-title"><a href="/title/<%= w.slug %>"><%= w.title %></a></h2>
             <p class="hero-desc"><%= w.description.length > 260 ? w.description.slice(0, 260) + '…' : w.description %></p>
             <div class="chips">
-              <% w.genres.forEach(function (g) { %><a class="chip" href="<%= catalogUrl('genre', g.slug) %>"><%= g.name %></a><% }) %>
+              <% w.genres.forEach(function (g) { %><a class="chip" href="<%= catalogUrl('genre', g.slug) %>"><%= __(g.name) %></a><% }) %>
             </div>
             <div class="row-gap">
-              <a href="/title/<%= w.slug %>" class="btn btn-primary"><%- icon('book') %>Читать</a>
-              <span class="hero-stats muted"><%- icon('eye', 'tiny') %><%= util.compactNumber(w.views) %> <%- icon('heart', 'tiny') %><%= util.compactNumber(w.likes_count) %> · <%= w.chapters_count %> гл.</span>
+              <a href="/title/<%= w.slug %>" class="btn btn-primary"><%- icon('book') %><%= __('Читать') %></a>
+              <span class="hero-stats muted"><%- icon('eye', 'tiny') %><%= util.compactNumber(w.views) %> <%- icon('heart', 'tiny') %><%= util.compactNumber(w.likes_count) %> · <%= w.chapters_count %> <%= __('гл.') %></span>
             </div>
           </div>
         </div>
@@ -26,7 +26,7 @@
   </div>
   <% if (hero.length > 1) { %>
     <div class="hero-dots">
-      <% hero.forEach(function (w, i) { %><button class="<%= i === 0 ? 'active' : '' %>" data-dot="<%= i %>" aria-label="Слайд <%= i + 1 %>"></button><% }) %>
+      <% hero.forEach(function (w, i) { %><button class="<%= i === 0 ? 'active' : '' %>" data-dot="<%= i %>" aria-label="<%= __('Слайд {n}', { n: i + 1 }) %>"></button><% }) %>
     </div>
   <% } %>
 </section>
@@ -34,9 +34,9 @@
 <section class="hero hero-empty">
   <div class="container hero-inner">
     <div class="hero-text">
-      <h1 class="hero-title">Добро пожаловать в <%= SITE_NAME %></h1>
-      <p class="hero-desc">Каталог пока пуст. Создайте команду, пройдите модерацию и загрузите первое произведение!</p>
-      <div class="row-gap"><a href="/teams/new" class="btn btn-primary"><%- icon('users') %>Создать команду</a><a href="/about" class="btn btn-ghost">О сайте</a></div>
+      <h1 class="hero-title"><%= __('Добро пожаловать в') %> <%= SITE_NAME %></h1>
+      <p class="hero-desc"><%= __('Каталог пока пуст. Создайте команду, пройдите модерацию и загрузите первое произведение!') %></p>
+      <div class="row-gap"><a href="/teams/new" class="btn btn-primary"><%- icon('users') %><%= __('Создать команду') %></a><a href="/about" class="btn btn-ghost"><%= __('О сайте') %></a></div>
     </div>
   </div>
 </section>
@@ -46,8 +46,8 @@
   <% if (continueList.length) { %>
     <section class="section">
       <div class="section-head">
-        <h2><%- icon('bookmark') %>Продолжить чтение</h2>
-        <a class="section-link" href="/profile?tab=history">История <%- icon('chevronRight', 'small') %></a>
+        <h2><%- icon('bookmark') %><%= __('Продолжить чтение') %></h2>
+        <a class="section-link" href="/profile?tab=history"><%= __('История') %> <%- icon('chevronRight', 'small') %></a>
       </div>
       <div class="continue-list">
         <% continueList.forEach(function (w) { %>
@@ -55,7 +55,7 @@
             <img src="<%= w.cover %>" alt="" loading="lazy">
             <span>
               <strong><%= w.title %></strong>
-              <span class="muted">Глава <%= util.formatChapterNumber(w.chapter_number) %> · <%= util.timeAgo(w.read_at) %></span>
+              <span class="muted"><%= __('Глава') %> <%= util.formatChapterNumber(w.chapter_number) %> · <%= util.timeAgo(w.read_at) %></span>
             </span>
           </a>
         <% }) %>
@@ -66,8 +66,8 @@
   <div class="home-grid">
     <section class="section" id="updates">
       <div class="section-head">
-        <h2><%- icon('clock') %>Свежие обновления</h2>
-        <a class="section-link" href="/catalog?sort=updated">Все <%- icon('chevronRight', 'small') %></a>
+        <h2><%- icon('clock') %><%= __('Свежие обновления') %></h2>
+        <a class="section-link" href="/catalog?sort=updated"><%= __('Все') %> <%- icon('chevronRight', 'small') %></a>
       </div>
       <% if (updates.length) { %>
         <div class="updates">
@@ -83,7 +83,7 @@
                   <% w.recentChapters.forEach(function (c) { %>
                     <li>
                       <a href="/title/<%= w.slug %>/chapter/<%= c.id %>">
-                        <% if (c.volume) { %>Том <%= c.volume %> <% } %>Глава <%= util.formatChapterNumber(c.number) %><% if (c.title) { %> <span class="muted">— <%= c.title %></span><% } %>
+                        <% if (c.volume) { %><%= __('Том') %> <%= c.volume %> <% } %><%= __('Глава') %> <%= util.formatChapterNumber(c.number) %><% if (c.title) { %> <span class="muted">— <%= c.title %></span><% } %>
                       </a>
                       <span class="muted nowrap"><%= util.timeAgo(c.created_at) %></span>
                     </li>
@@ -94,14 +94,14 @@
           <% }) %>
         </div>
       <% } else { %>
-        <div class="empty">Новых глав пока нет.</div>
+        <div class="empty"><%= __('Новых глав пока нет.') %></div>
       <% } %>
     </section>
 
     <aside class="home-aside">
       <section class="section">
-        <div class="section-head"><h2><%- icon('trophy') %>Топ за сегодня</h2></div>
-        <% if (topFallback) { %><p class="section-note muted">Сегодня ещё тихо — показываем лидеров недели.</p><% } %>
+        <div class="section-head"><h2><%- icon('trophy') %><%= __('Топ за сегодня') %></h2></div>
+        <% if (topFallback) { %><p class="section-note muted"><%= __('Сегодня ещё тихо — показываем лидеров недели.') %></p><% } %>
         <ol class="rank-list">
           <% topDay.forEach(function (w, i) { %>
             <li>
@@ -116,7 +116,7 @@
             </li>
           <% }) %>
         </ol>
-        <% if (!topDay.length) { %><div class="empty">Пока нет данных.</div><% } %>
+        <% if (!topDay.length) { %><div class="empty"><%= __('Пока нет данных.') %></div><% } %>
       </section>
     </aside>
   </div>
@@ -134,17 +134,17 @@
   <% } %>
 
   <section class="section">
-    <div class="section-head"><h2><%- icon('layers') %>Жанры</h2><a class="section-link" href="/catalog">Расширенный поиск <%- icon('chevronRight', 'small') %></a></div>
+    <div class="section-head"><h2><%- icon('layers') %><%= __('Жанры') %></h2><a class="section-link" href="/catalog"><%= __('Расширенный поиск') %> <%- icon('chevronRight', 'small') %></a></div>
     <div class="chips chips-lg">
-      <% genres.forEach(function (g) { %><a class="chip" href="<%= catalogUrl('genre', g.slug) %>"><%= g.name %></a><% }) %>
+      <% genres.slice().sort(function (x, y) { return __(x.name).localeCompare(__(y.name)); }).forEach(function (g) { %><a class="chip" href="<%= catalogUrl('genre', g.slug) %>"><%= __(g.name) %></a><% }) %>
     </div>
   </section>
 
   <section class="section stats-band">
-    <div><strong><%= util.compactNumber(stats.works) %></strong><span class="muted">тайтлов</span></div>
-    <div><strong><%= util.compactNumber(stats.chapters) %></strong><span class="muted">глав</span></div>
-    <div><strong><%= util.compactNumber(stats.teams) %></strong><span class="muted">команд</span></div>
-    <div><strong><%= util.compactNumber(stats.users) %></strong><span class="muted">читателей</span></div>
+    <div><strong><%= util.compactNumber(stats.works) %></strong><span class="muted"><%= __('тайтлов') %></span></div>
+    <div><strong><%= util.compactNumber(stats.chapters) %></strong><span class="muted"><%= __('глав') %></span></div>
+    <div><strong><%= util.compactNumber(stats.teams) %></strong><span class="muted"><%= __('команд') %></span></div>
+    <div><strong><%= util.compactNumber(stats.users) %></strong><span class="muted"><%= __('читателей') %></span></div>
   </section>
 </div>
 

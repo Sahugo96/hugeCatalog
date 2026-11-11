@@ -1,23 +1,23 @@
 <%- include('../partials/header') %>
 <% var w = work; %>
 <div class="container page-pad">
-  <div class="breadcrumbs"><a href="/studio">Студия</a> / <span><%= w.title %></span></div>
+  <div class="breadcrumbs"><a href="/studio"><%= __('Студия') %></a> / <span><%= w.title %></span></div>
   <div class="studio-work-head">
     <% if (w.cover) { %><img class="studio-cover" src="<%= w.cover %>" alt=""><% } %>
     <div class="grow">
       <h1><%= w.title %></h1>
       <p class="muted"><%= labelOf(C.TYPES, w.type) %><%= w.year ? ' · ' + w.year : '' %> · <%= labelOf(C.LANGUAGES, w.language) %> · <%= w.age_rating %><%= w.team_name ? ' · ' + w.team_name : '' %></p>
       <p>
-        <span class="status status-<%= w.moderation %>"><%= { pending: 'на модерации', approved: 'опубликован', rejected: 'отклонён' }[w.moderation] %></span>
-        <% if (w.moderation === 'rejected') { %><span class="small">Причина: <%= w.reject_reason %>. Исправьте данные и сохраните — тайтл снова уйдёт на проверку.</span><% } %>
+        <span class="status status-<%= w.moderation %>"><%= __({ pending: 'на модерации', approved: 'опубликован', rejected: 'отклонён' }[w.moderation]) %></span>
+        <% if (w.moderation === 'rejected') { %><span class="small"><%= __('Причина:') %> <%= w.reject_reason %><%= __('. Исправьте данные и сохраните — тайтл снова уйдёт на проверку.') %></span><% } %>
       </p>
       <div class="row-gap">
-        <a class="btn btn-primary btn-sm" href="/studio/works/<%= w.id %>/chapters/new"><%- icon('upload') %>Загрузить главу</a>
-        <a class="btn btn-ghost btn-sm" href="/studio/works/<%= w.id %>/edit"><%- icon('edit') %>Редактировать</a>
-        <a class="btn btn-ghost btn-sm" href="/title/<%= w.slug %>"><%- icon('eye') %>Страница тайтла</a>
-        <form method="post" action="/studio/works/<%= w.id %>/delete" data-confirm="Удалить тайтл «<%= w.title %>» со всеми главами? Это действие нельзя отменить.">
+        <a class="btn btn-primary btn-sm" href="/studio/works/<%= w.id %>/chapters/new"><%- icon('upload') %><%= __('Загрузить главу') %></a>
+        <a class="btn btn-ghost btn-sm" href="/studio/works/<%= w.id %>/edit"><%- icon('edit') %><%= __('Редактировать') %></a>
+        <a class="btn btn-ghost btn-sm" href="/title/<%= w.slug %>"><%- icon('eye') %><%= __('Страница тайтла') %></a>
+        <form method="post" action="/studio/works/<%= w.id %>/delete" data-confirm="<%= __('Удалить тайтл «{title}» со всеми главами? Это действие нельзя отменить.', { title: w.title }) %>">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-          <button class="btn btn-danger btn-sm"><%- icon('trash') %>Удалить</button>
+          <button class="btn btn-danger btn-sm"><%- icon('trash') %><%= __('Удалить') %></button>
         </form>
       </div>
     </div>
@@ -25,38 +25,38 @@
 
   <section class="section panel" id="versions">
     <div class="section-head">
-      <h2><%- icon('layers') %>Языковые версии</h2>
-      <a class="btn btn-primary btn-sm" href="/studio/works/new?from=<%= w.id %>"><%- icon('plus') %>Добавить версию на другом языке</a>
+      <h2><%- icon('layers') %><%= __('Языковые версии') %></h2>
+      <a class="btn btn-primary btn-sm" href="/studio/works/new?from=<%= w.id %>"><%- icon('plus') %><%= __('Добавить версию на другом языке') %></a>
     </div>
-    <p class="muted small">Версии одного произведения на разных языках связаны между собой: на странице каждой показываются флаги со ссылками на остальные.</p>
+    <p class="muted small"><%= __('Версии одного произведения на разных языках связаны между собой: на странице каждой показываются флаги со ссылками на остальные.') %></p>
     <% if (versions.length) { %>
       <ul class="version-list">
         <% versions.forEach(function (v) { %>
           <li>
             <%- flag(v.language) %>
             <a href="/title/<%= v.slug %>"><%= v.title %></a>
-            <span class="muted small hide-sm"><%= labelOf(C.LANGUAGES, v.language) %> · <%= v.chapters_count %> гл.</span>
-            <% if (v.moderation !== 'approved') { %><span class="status status-<%= v.moderation %>"><%= v.moderation === 'pending' ? 'на модерации' : 'отклонён' %></span><% } %>
+            <span class="muted small hide-sm"><%= labelOf(C.LANGUAGES, v.language) %> · <%= v.chapters_count %> <%= __('гл.') %></span>
+            <% if (v.moderation !== 'approved') { %><span class="status status-<%= v.moderation %>"><%= __(v.moderation === 'pending' ? 'на модерации' : 'отклонён') %></span><% } %>
             <% if (v.id === w.id) { %>
-              <span class="badge badge-soft">эта версия</span>
+              <span class="badge badge-soft"><%= __('эта версия') %></span>
             <% } %>
-            <form method="post" action="/studio/works/<%= w.id %>/versions/<%= v.id %>/unlink" data-confirm="Отвязать «<%= v.title %>» от остальных версий?">
+            <form method="post" action="/studio/works/<%= w.id %>/versions/<%= v.id %>/unlink" data-confirm="<%= __('Отвязать «{title}» от остальных версий?', { title: v.title }) %>">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-              <button class="icon-btn small danger" title="Отвязать" aria-label="Отвязать"><%- icon('x') %></button>
+              <button class="icon-btn small danger" title="<%= __('Отвязать') %>" aria-label="<%= __('Отвязать') %>"><%- icon('x') %></button>
             </form>
           </li>
         <% }) %>
       </ul>
     <% } else { %>
-      <p>Пока это единственная версия — <%- flag(w.language) %> <%= labelOf(C.LANGUAGES, w.language) %>.</p>
+      <p><%= __('Пока это единственная версия —') %> <%- flag(w.language) %> <%= labelOf(C.LANGUAGES, w.language) %>.</p>
     <% } %>
     <form method="post" action="/studio/works/<%= w.id %>/versions" class="link-form" data-link-form>
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <input type="hidden" name="target_id" required>
       <div class="field">
-        <span>Связать с уже существующим произведением</span>
+        <span><%= __('Связать с уже существующим произведением') %></span>
         <div class="link-search">
-          <input class="input" type="search" placeholder="Начните вводить название другой версии…" data-link-search autocomplete="off">
+          <input class="input" type="search" placeholder="<%= __('Начните вводить название другой версии…') %>" data-link-search autocomplete="off">
           <div class="link-results" hidden></div>
         </div>
       </div>
@@ -64,23 +64,23 @@
   </section>
 
   <section class="section" id="chapters">
-    <div class="section-head"><h2><%- icon('list') %>Главы (<%= chapters.length %>)</h2></div>
+    <div class="section-head"><h2><%- icon('list') %><%= __('Главы (') %><%= chapters.length %>)</h2></div>
     <% if (chapters.length) { %>
       <div class="table-wrap">
         <table class="table">
-          <thead><tr><th>Глава</th><th class="hide-sm">Команда</th><th class="hide-sm">Стр.</th><th>Дата</th><th></th></tr></thead>
+          <thead><tr><th><%= __('Глава') %></th><th class="hide-sm"><%= __('Команда') %></th><th class="hide-sm"><%= __('Стр.') %></th><th><%= __('Дата') %></th><th></th></tr></thead>
           <tbody>
             <% chapters.forEach(function (c) { %>
               <tr>
-                <td><a href="/title/<%= w.slug %>/chapter/<%= c.id %>"><%= c.volume ? 'Т. ' + c.volume + ' ' : '' %>Гл. <%= util.formatChapterNumber(c.number) %></a><% if (c.title) { %> <span class="muted">— <%= c.title %></span><% } %></td>
+                <td><a href="/title/<%= w.slug %>/chapter/<%= c.id %>"><%= __(c.volume ? 'Т. ' + c.volume + ' ' : '') %><%= __('Гл.') %> <%= util.formatChapterNumber(c.number) %></a><% if (c.title) { %> <span class="muted">— <%= c.title %></span><% } %></td>
                 <td class="hide-sm"><%= c.team_name || '—' %></td>
                 <td class="hide-sm"><%= c.pages_count %></td>
                 <td class="nowrap"><%= util.formatDate(c.created_at) %></td>
                 <td class="table-actions">
-                  <a class="icon-btn small" href="/studio/chapters/<%= c.id %>/edit" title="Редактировать" aria-label="Редактировать"><%- icon('edit') %></a>
-                  <form method="post" action="/studio/chapters/<%= c.id %>/delete" data-confirm="Удалить главу <%= util.formatChapterNumber(c.number) %>?">
+                  <a class="icon-btn small" href="/studio/chapters/<%= c.id %>/edit" title="<%= __('Редактировать') %>" aria-label="<%= __('Редактировать') %>"><%- icon('edit') %></a>
+                  <form method="post" action="/studio/chapters/<%= c.id %>/delete" data-confirm="<%= __('Удалить главу {n}?', { n: util.formatChapterNumber(c.number) }) %>">
                     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                    <button class="icon-btn small danger" title="Удалить" aria-label="Удалить"><%- icon('trash') %></button>
+                    <button class="icon-btn small danger" title="<%= __('Удалить') %>" aria-label="<%= __('Удалить') %>"><%- icon('trash') %></button>
                   </form>
                 </td>
               </tr>
@@ -89,7 +89,7 @@
         </table>
       </div>
     <% } else { %>
-      <div class="empty empty-lg"><%- icon('upload') %><p>Глав пока нет.</p><a class="btn btn-primary" href="/studio/works/<%= w.id %>/chapters/new">Загрузить первую главу</a></div>
+      <div class="empty empty-lg"><%- icon('upload') %><p><%= __('Глав пока нет.') %></p><a class="btn btn-primary" href="/studio/works/<%= w.id %>/chapters/new"><%= __('Загрузить первую главу') %></a></div>
     <% } %>
   </section>
 </div>

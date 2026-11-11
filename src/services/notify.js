@@ -2,6 +2,7 @@
 
 const { q, transaction } = require('../db');
 const realtime = require('../realtime');
+const { translate } = require('../i18n');
 
 function unreadNotifications(userId) {
   return q('SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND is_read = 0').get(userId).n;
@@ -33,7 +34,7 @@ function notify(userIds, n, { exclude = [] } = {}) {
   const ins = q('INSERT INTO notifications (user_id, type, title, body, link) VALUES (?, ?, ?, ?, ?)');
   transaction(() => ids.forEach((id) => ins.run(id, n.type, n.title.slice(0, 200), (n.body || '').slice(0, 500), n.link || null)));
   for (const id of ids) {
-    realtime.toUsers([id], 'notification', { title: n.title, body: n.body || '', link: n.link || null });
+    realtime.toUsers([id], 'notification', (lang) => ({ title: translate(lang, n.title), body: translate(lang, n.body || ''), link: n.link || null }));
     realtime.toUsers([id], 'counters', counters(id));
   }
 }

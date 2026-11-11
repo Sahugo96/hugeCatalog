@@ -1,5 +1,5 @@
 <%- include('partials/header') %>
-<% var w = work; var chLabel = function (c) { return (c.volume ? 'Том ' + c.volume + ' · ' : '') + 'Глава ' + util.formatChapterNumber(c.number) + (c.title ? ' — ' + c.title : ''); }; %>
+<% var w = work; var chLabel = function (c) { return (c.volume ? __('Том {n}', { n: c.volume }) + ' · ' : '') + __('Глава {n}', { n: util.formatChapterNumber(c.number) }) + (c.title ? ' — ' + c.title : ''); }; %>
 
 <div class="reader" data-reader
      data-prev="<%= prev ? '/title/' + w.slug + '/chapter/' + prev.id : '' %>"
@@ -7,20 +7,20 @@
      data-title-url="/title/<%= w.slug %>">
 
   <header class="reader-bar reader-top" data-reader-bar>
-    <a href="/title/<%= w.slug %>" class="icon-btn" aria-label="К описанию тайтла" title="К тайтлу"><%- icon('arrowLeft') %></a>
+    <a href="/title/<%= w.slug %>" class="icon-btn" aria-label="<%= __('К описанию тайтла') %>" title="<%= __('К тайтлу') %>"><%- icon('arrowLeft') %></a>
     <div class="reader-titles">
       <a href="/title/<%= w.slug %>" class="reader-work"><%= w.title %></a>
-      <select class="reader-select" data-chapter-select aria-label="Выбор главы">
+      <select class="reader-select" data-chapter-select aria-label="<%= __('Выбор главы') %>">
         <% chapters.slice().reverse().forEach(function (c) { %>
           <option value="/title/<%= w.slug %>/chapter/<%= c.id %>" <%= c.id === chapter.id ? 'selected' : '' %>><%= chLabel(c) %></option>
         <% }) %>
       </select>
     </div>
     <div class="reader-nav">
-      <a class="icon-btn <%= prev ? '' : 'disabled' %>" <% if (prev) { %>href="/title/<%= w.slug %>/chapter/<%= prev.id %>"<% } %> aria-label="Предыдущая глава" title="Предыдущая глава"><%- icon('chevronLeft') %></a>
-      <a class="icon-btn <%= next ? '' : 'disabled' %>" <% if (next) { %>href="/title/<%= w.slug %>/chapter/<%= next.id %>"<% } %> aria-label="Следующая глава" title="Следующая глава"><%- icon('chevronRight') %></a>
-      <button class="icon-btn" data-reader-settings aria-label="Настройки чтения" title="Настройки"><%- icon('settings') %></button>
-      <button class="icon-btn theme-toggle" data-theme-toggle aria-label="Переключить тему">
+      <a class="icon-btn <%= prev ? '' : 'disabled' %>" <% if (prev) { %>href="/title/<%= w.slug %>/chapter/<%= prev.id %>"<% } %> aria-label="<%= __('Предыдущая глава') %>" title="<%= __('Предыдущая глава') %>"><%- icon('chevronLeft') %></a>
+      <a class="icon-btn <%= next ? '' : 'disabled' %>" <% if (next) { %>href="/title/<%= w.slug %>/chapter/<%= next.id %>"<% } %> aria-label="<%= __('Следующая глава') %>" title="<%= __('Следующая глава') %>"><%- icon('chevronRight') %></a>
+      <button class="icon-btn" data-reader-settings aria-label="<%= __('Настройки чтения') %>" title="<%= __('Настройки') %>"><%- icon('settings') %></button>
+      <button class="icon-btn theme-toggle" data-theme-toggle aria-label="<%= __('Переключить тему') %>">
         <span class="theme-icon-light"><%- icon('sun') %></span><span class="theme-icon-dark"><%- icon('moon') %></span>
       </button>
     </div>
@@ -28,59 +28,59 @@
 
   <div class="reader-settings" data-settings-panel hidden>
     <div class="setting">
-      <span>Режим чтения</span>
+      <span><%= __('Режим чтения') %></span>
       <div class="segmented" data-setting="mode">
-        <button data-value="scroll">Лента</button>
-        <button data-value="paged">По страницам</button>
+        <button data-value="scroll"><%= __('Лента') %></button>
+        <button data-value="paged"><%= __('По страницам') %></button>
       </div>
     </div>
     <div class="setting">
-      <span>Ширина страниц</span>
+      <span><%= __('Ширина страниц') %></span>
       <div class="segmented" data-setting="width">
-        <button data-value="narrow">Узко</button>
-        <button data-value="normal">Средне</button>
-        <button data-value="full">На всю ширину</button>
+        <button data-value="narrow"><%= __('Узко') %></button>
+        <button data-value="normal"><%= __('Средне') %></button>
+        <button data-value="full"><%= __('На всю ширину') %></button>
       </div>
     </div>
     <div class="setting">
-      <span>Отступы между страницами</span>
+      <span><%= __('Отступы между страницами') %></span>
       <div class="segmented" data-setting="gap">
-        <button data-value="0">Нет</button>
-        <button data-value="1">Есть</button>
+        <button data-value="0"><%= __('Нет') %></button>
+        <button data-value="1"><%= __('Есть') %></button>
       </div>
     </div>
-    <p class="muted small">Клавиши: ← → — листать, A / D — главы, F — полноэкранный режим.</p>
+    <p class="muted small"><%= __('Клавиши: ← → — листать, A / D — главы, F — полноэкранный режим.') %></p>
   </div>
 
   <div class="reader-pages" data-pages>
     <% if (!pages.length) { %>
-      <div class="empty">В этой главе нет страниц.</div>
+      <div class="empty"><%= __('В этой главе нет страниц.') %></div>
     <% } %>
     <% pages.forEach(function (p, i) { %>
       <figure class="page-frame" data-page="<%= i + 1 %>">
-        <img src="<%= p.path %>" alt="Страница <%= i + 1 %>" <%= i > 2 ? 'loading=lazy' : '' %> decoding="async">
+        <img src="<%= p.path %>" alt="<%= __('Страница {n}', { n: i + 1 }) %>" <%= i > 2 ? 'loading=lazy' : '' %> decoding="async">
       </figure>
     <% }) %>
   </div>
 
   <div class="reader-paged-hint" data-paged-ui hidden>
-    <button class="paged-zone paged-prev" data-paged-prev aria-label="Предыдущая страница"></button>
-    <button class="paged-zone paged-next" data-paged-next aria-label="Следующая страница"></button>
+    <button class="paged-zone paged-prev" data-paged-prev aria-label="<%= __('Предыдущая страница') %>"></button>
+    <button class="paged-zone paged-next" data-paged-next aria-label="<%= __('Следующая страница') %>"></button>
   </div>
 
   <section class="reader-end container narrow">
-    <p class="muted">Вы дочитали <%= chLabel(chapter) %><% if (chapter.team_name) { %> · перевод: <a href="/team/<%= chapter.team_slug %>"><%= chapter.team_name %></a><% } %></p>
+    <p class="muted"><%= __('Вы дочитали') %> <%= chLabel(chapter) %><% if (chapter.team_name) { %> <%= __('· перевод:') %> <a href="/team/<%= chapter.team_slug %>"><%= chapter.team_name %></a><% } %></p>
     <div class="row-gap center">
-      <% if (prev) { %><a class="btn btn-ghost" href="/title/<%= w.slug %>/chapter/<%= prev.id %>"><%- icon('chevronLeft') %>Предыдущая</a><% } %>
+      <% if (prev) { %><a class="btn btn-ghost" href="/title/<%= w.slug %>/chapter/<%= prev.id %>"><%- icon('chevronLeft') %><%= __('Предыдущая') %></a><% } %>
       <% if (next) { %>
-        <a class="btn btn-primary" href="/title/<%= w.slug %>/chapter/<%= next.id %>">Следующая глава<%- icon('chevronRight') %></a>
+        <a class="btn btn-primary" href="/title/<%= w.slug %>/chapter/<%= next.id %>"><%= __('Следующая глава') %><%- icon('chevronRight') %></a>
       <% } else { %>
-        <a class="btn btn-primary" href="/title/<%= w.slug %>">Это последняя глава — к тайтлу</a>
+        <a class="btn btn-primary" href="/title/<%= w.slug %>"><%= __('Это последняя глава — к тайтлу') %></a>
       <% } %>
     </div>
     <% if (user) { %>
       <div class="row-gap center">
-        <button class="btn btn-ghost btn-sm toggle-btn" data-toggle-action="like" data-work="<%= w.id %>"><%- icon('heart') %>Понравилось <span data-count><%= util.compactNumber(w.likes_count) %></span></button>
+        <button class="btn btn-ghost btn-sm toggle-btn" data-toggle-action="like" data-work="<%= w.id %>"><%- icon('heart') %><%= __('Понравилось') %> <span data-count><%= util.compactNumber(w.likes_count) %></span></button>
       </div>
     <% } %>
   </section>

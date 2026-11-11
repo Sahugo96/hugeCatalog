@@ -2,33 +2,33 @@
 <div class="container page-pad">
   <div class="page-head">
     <div>
-      <h1>Студия</h1>
-      <p class="muted">Загрузка и управление тайтлами ваших команд.</p>
+      <h1><%= __('Студия') %></h1>
+      <p class="muted"><%= __('Загрузка и управление тайтлами ваших команд.') %></p>
     </div>
-    <% if (canUpload) { %><a href="/studio/works/new" class="btn btn-primary"><%- icon('plus') %>Добавить тайтл</a><% } %>
+    <% if (canUpload) { %><a href="/studio/works/new" class="btn btn-primary"><%- icon('plus') %><%= __('Добавить тайтл') %></a><% } %>
   </div>
 
   <% if (!canUpload) { %>
     <div class="onboarding">
-      <h2>Как начать публиковать</h2>
+      <h2><%= __('Как начать публиковать') %></h2>
       <ol class="steps">
-        <li class="<%= pendingTeam ? 'done' : '' %>"><strong>Создайте команду</strong> —
-          <% if (pendingTeam) { %>заявка подана: <a href="/team/<%= pendingTeam.slug %>"><%= pendingTeam.name %></a><% } else { %><a href="/teams/new">подать заявку</a><% } %>
+        <li class="<%= pendingTeam ? 'done' : '' %>"><strong><%= __('Создайте команду') %></strong> —
+          <% if (pendingTeam) { %><%= __('заявка подана:') %> <a href="/team/<%= pendingTeam.slug %>"><%= pendingTeam.name %></a><% } else { %><a href="/teams/new"><%= __('подать заявку') %></a><% } %>
         </li>
-        <li><strong>Дождитесь одобрения</strong> модератором
-          <% if (pendingTeam && pendingTeam.status === 'pending') { %><span class="status status-pending">на рассмотрении</span><% } %>
-          <% if (pendingTeam && pendingTeam.status === 'rejected') { %><span class="status status-rejected">отклонена: <%= pendingTeam.reject_reason %></span><% } %>
+        <li><strong><%= __('Дождитесь одобрения') %></strong> <%= __('модератором') %>
+          <% if (pendingTeam && pendingTeam.status === 'pending') { %><span class="status status-pending"><%= __('на рассмотрении') %></span><% } %>
+          <% if (pendingTeam && pendingTeam.status === 'rejected') { %><span class="status status-rejected"><%= __('отклонена:') %> <%= pendingTeam.reject_reason %></span><% } %>
         </li>
-        <li><strong>Добавляйте тайтлы и главы</strong> — новые тайтлы публикуются после проверки.</li>
+        <li><strong><%= __('Добавляйте тайтлы и главы') %></strong> <%= __('— новые тайтлы публикуются после проверки.') %></li>
       </ol>
-      <% if (!pendingTeam) { %><a href="/teams/new" class="btn btn-primary"><%- icon('users') %>Создать команду</a><% } %>
+      <% if (!pendingTeam) { %><a href="/teams/new" class="btn btn-primary"><%- icon('users') %><%= __('Создать команду') %></a><% } %>
     </div>
   <% } %>
 
   <% if (works.length) { %>
     <div class="table-wrap">
       <table class="table">
-        <thead><tr><th>Тайтл</th><th class="hide-sm">Команда</th><th>Статус</th><th class="hide-sm">Глав</th><th></th></tr></thead>
+        <thead><tr><th><%= __('Тайтл') %></th><th class="hide-sm"><%= __('Команда') %></th><th><%= __('Статус') %></th><th class="hide-sm"><%= __('Глав') %></th><th></th></tr></thead>
         <tbody>
           <% works.forEach(function (w) { %>
             <tr>
@@ -39,12 +39,12 @@
               </td>
               <td class="hide-sm"><%= w.team_name || '—' %></td>
               <td>
-                <span class="status status-<%= w.moderation %>"><%= { pending: 'на модерации', approved: 'опубликован', rejected: 'отклонён' }[w.moderation] %></span>
-                <% if (w.moderation === 'rejected' && w.reject_reason) { %><div class="small muted">Причина: <%= w.reject_reason %></div><% } %>
+                <span class="status status-<%= w.moderation %>"><%= __({ pending: 'на модерации', approved: 'опубликован', rejected: 'отклонён' }[w.moderation]) %></span>
+                <% if (w.moderation === 'rejected' && w.reject_reason) { %><div class="small muted"><%= __('Причина:') %> <%= w.reject_reason %></div><% } %>
               </td>
               <td class="hide-sm"><%= w.chapters_count %></td>
               <td class="table-actions">
-                <a class="btn btn-ghost btn-sm" href="/studio/works/<%= w.id %>/chapters/new"><%- icon('upload') %><span class="hide-sm">Глава</span></a>
+                <a class="btn btn-ghost btn-sm" href="/studio/works/<%= w.id %>/chapters/new"><%- icon('upload') %><span class="hide-sm"><%= __('Глава') %></span></a>
                 <a class="btn btn-ghost btn-sm" href="/studio/works/<%= w.id %>"><%- icon('settings') %></a>
               </td>
             </tr>
@@ -53,7 +53,7 @@
       </table>
     </div>
   <% } else if (canUpload) { %>
-    <div class="empty empty-lg"><%- icon('upload') %><p>Тайтлов пока нет. Добавьте первый!</p><a href="/studio/works/new" class="btn btn-primary">Добавить тайтл</a></div>
+    <div class="empty empty-lg"><%- icon('upload') %><p><%= __('Тайтлов пока нет. Добавьте первый!') %></p><a href="/studio/works/new" class="btn btn-primary"><%= __('Добавить тайтл') %></a></div>
   <% } %>
 </div>
 <%- include('../partials/footer') %>

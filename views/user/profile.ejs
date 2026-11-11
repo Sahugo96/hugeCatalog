@@ -4,48 +4,48 @@
     <span class="avatar avatar-lg"><%= user.username.slice(0, 1).toUpperCase() %></span>
     <div>
       <h1><%= user.username %></h1>
-      <p class="muted">С нами с <%= util.formatDate(user.created_at) %> · <%= labelOf(C.ROLES, user.role) %></p>
+      <p class="muted"><%= __('С нами с') %> <%= util.formatDate(user.created_at) %> · <%= labelOf(C.ROLES, user.role) %></p>
     </div>
     <div class="profile-actions">
-      <a class="btn btn-ghost btn-sm" href="/user/<%= encodeURIComponent(user.username) %>">Публичный профиль</a>
-      <a class="btn btn-ghost btn-sm" href="/settings"><%- icon('settings') %>Настройки</a>
+      <a class="btn btn-ghost btn-sm" href="/user/<%= encodeURIComponent(user.username) %>"><%= __('Публичный профиль') %></a>
+      <a class="btn btn-ghost btn-sm" href="/settings"><%- icon('settings') %><%= __('Настройки') %></a>
     </div>
   </div>
 
   <% if (teams.length) { %>
     <section class="section">
-      <div class="section-head"><h2><%- icon('users') %>Мои команды</h2><a class="section-link" href="/teams/new">Создать ещё</a></div>
+      <div class="section-head"><h2><%- icon('users') %><%= __('Мои команды') %></h2><a class="section-link" href="/teams/new"><%= __('Создать ещё') %></a></div>
       <div class="team-list">
         <% teams.forEach(function (t) { %>
           <a class="team-row" href="/team/<%= t.slug %>">
             <strong><%= t.name %></strong>
-            <span class="muted"><%= t.my_role === 'owner' ? 'владелец' : 'участник' %></span>
-            <span class="status status-<%= t.status %>"><%= { pending: 'на модерации', approved: 'одобрена', rejected: 'отклонена' }[t.status] %></span>
+            <span class="muted"><%= __(t.my_role === 'owner' ? 'владелец' : 'участник') %></span>
+            <span class="status status-<%= t.status %>"><%= __({ pending: 'на модерации', approved: 'одобрена', rejected: 'отклонена' }[t.status]) %></span>
           </a>
         <% }) %>
       </div>
     </section>
   <% } else { %>
-    <div class="notice notice-info"><%- icon('users') %><div>Хотите публиковать переводы? <a href="/teams/new">Создайте команду</a> — после одобрения модератором вы сможете загружать произведения.</div></div>
+    <div class="notice notice-info"><%- icon('users') %><div><%= __('Хотите публиковать переводы?') %> <a href="/teams/new"><%= __('Создайте команду') %></a> <%= __('— после одобрения модератором вы сможете загружать произведения.') %></div></div>
   <% } %>
 
   <nav class="tab-list tab-links">
     <% Object.keys(tabs).forEach(function (k) { %>
-      <a class="tab <%= tab === k ? 'active' : '' %>" href="/profile?tab=<%= k %>"><%= tabs[k].label %> <span class="count-badge"><%= counts[k] %></span></a>
+      <a class="tab <%= tab === k ? 'active' : '' %>" href="/profile?tab=<%= k %>"><%= __(tabs[k].label) %> <span class="count-badge"><%= counts[k] %></span></a>
     <% }) %>
   </nav>
 
   <% if (!items.length) { %>
     <div class="empty empty-lg">
       <%- icon(tab === 'history' ? 'clock' : tab === 'likes' ? 'heart' : 'bookmark') %>
-      <p><%= tab === 'history' ? 'Вы ещё ничего не читали.' : 'Здесь пока пусто.' %> Загляните в <a href="/catalog">каталог</a>!</p>
+      <p><%= __(tab === 'history' ? 'Вы ещё ничего не читали.' : 'Здесь пока пусто.') %> <%= __('Загляните в') %> <a href="/catalog"><%= __('каталог') %></a>!</p>
     </div>
   <% } else if (tab === 'history') { %>
     <div class="continue-list">
       <% items.forEach(function (w) { %>
         <a class="continue-item" href="/title/<%= w.slug %>/chapter/<%= w.chapter_id %>">
           <img src="<%= w.cover %>" alt="" loading="lazy">
-          <span><strong><%= w.title %></strong><span class="muted">Глава <%= util.formatChapterNumber(w.chapter_number) %> · <%= util.timeAgo(w.read_at) %></span></span>
+          <span><strong><%= w.title %></strong><span class="muted"><%= __('Глава') %> <%= util.formatChapterNumber(w.chapter_number) %> · <%= util.timeAgo(w.read_at) %></span></span>
         </a>
       <% }) %>
     </div>

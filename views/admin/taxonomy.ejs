@@ -1,13 +1,13 @@
 <%- include('../partials/header') %>
 <div class="container page-pad">
-  <h1>Жанры, теги и авторы</h1>
+  <h1><%= __('Жанры, теги и авторы') %></h1>
   <%- include('../partials/admin-nav') %>
 
   <section class="section panel" id="genres">
-    <div class="section-head"><h2>Жанры (<%= genres.length %>)</h2></div>
+    <div class="section-head"><h2><%= __('Жанры (') %><%= genres.length %>)</h2></div>
     <form method="post" action="/admin/genres" class="inline-form">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-      <input class="input input-sm" name="name" placeholder="Новый жанр" required><button class="btn btn-primary btn-sm"><%- icon('plus') %>Добавить</button>
+      <input class="input input-sm" name="name" placeholder="<%= __('Новый жанр') %>" required><button class="btn btn-primary btn-sm"><%- icon('plus') %><%= __('Добавить') %></button>
     </form>
     <div class="tax-list">
       <% genres.forEach(function (g) { %>
@@ -16,10 +16,10 @@
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <input class="input input-sm" name="name" value="<%= g.name %>" required>
             <span class="muted small"><%= g.n %></span>
-            <button class="icon-btn small" title="Сохранить" aria-label="Сохранить"><%- icon('check') %></button>
+            <button class="icon-btn small" title="<%= __('Сохранить') %>" aria-label="<%= __('Сохранить') %>"><%- icon('check') %></button>
           </form>
-          <form method="post" action="/admin/genres/<%= g.id %>/delete" data-confirm="Удалить жанр «<%= g.name %>»? Он пропадёт у <%= g.n %> тайтлов.">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="icon-btn small danger" title="Удалить" aria-label="Удалить"><%- icon('trash') %></button>
+          <form method="post" action="/admin/genres/<%= g.id %>/delete" data-confirm="<%= __('Удалить жанр «{name}»? Он пропадёт у {n} тайтлов.', { name: g.name, n: g.n }) %>">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="icon-btn small danger" title="<%= __('Удалить') %>" aria-label="<%= __('Удалить') %>"><%- icon('trash') %></button>
           </form>
         </div>
       <% }) %>
@@ -27,15 +27,15 @@
   </section>
 
   <section class="section panel" id="tags">
-    <div class="section-head"><h2>Теги</h2></div>
+    <div class="section-head"><h2><%= __('Теги') %></h2></div>
     <form method="post" action="/admin/tags" class="inline-form">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-      <input class="input input-sm" name="name" placeholder="Новый тег" required>
+      <input class="input input-sm" name="name" placeholder="<%= __('Новый тег') %>" required>
       <select class="input input-sm select" name="tag_group"><% C.TAG_GROUPS.forEach(function (g) { %><option><%= g %></option><% }) %></select>
-      <button class="btn btn-primary btn-sm"><%- icon('plus') %>Добавить</button>
+      <button class="btn btn-primary btn-sm"><%- icon('plus') %><%= __('Добавить') %></button>
     </form>
     <% tagGroups.forEach(function (grp) { %>
-      <h3 class="h4"><%= grp.group %></h3>
+      <h3 class="h4"><%= __(grp.group) %></h3>
       <div class="tax-list">
         <% grp.tags.forEach(function (t) { %>
           <div class="tax-item">
@@ -44,10 +44,10 @@
               <input class="input input-sm" name="name" value="<%= t.name %>" required>
               <select class="input input-sm select" name="tag_group"><% C.TAG_GROUPS.forEach(function (g) { %><option <%= g === t.tag_group ? 'selected' : '' %>><%= g %></option><% }) %></select>
               <span class="muted small"><%= t.n %></span>
-              <button class="icon-btn small" title="Сохранить" aria-label="Сохранить"><%- icon('check') %></button>
+              <button class="icon-btn small" title="<%= __('Сохранить') %>" aria-label="<%= __('Сохранить') %>"><%- icon('check') %></button>
             </form>
-            <form method="post" action="/admin/tags/<%= t.id %>/delete" data-confirm="Удалить тег «<%= t.name %>»?">
-              <input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="icon-btn small danger" title="Удалить" aria-label="Удалить"><%- icon('trash') %></button>
+            <form method="post" action="/admin/tags/<%= t.id %>/delete" data-confirm="<%= __('Удалить тег «{name}»?', { name: t.name }) %>">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="icon-btn small danger" title="<%= __('Удалить') %>" aria-label="<%= __('Удалить') %>"><%- icon('trash') %></button>
             </form>
           </div>
         <% }) %>
@@ -56,8 +56,8 @@
   </section>
 
   <section class="section panel" id="authors">
-    <div class="section-head"><h2>Авторы (<%= authors.length %>)</h2></div>
-    <p class="muted small">Авторы создаются автоматически при добавлении тайтлов. Здесь можно исправить написание имени.</p>
+    <div class="section-head"><h2><%= __('Авторы (') %><%= authors.length %>)</h2></div>
+    <p class="muted small"><%= __('Авторы создаются автоматически при добавлении тайтлов. Здесь можно исправить написание имени.') %></p>
     <div class="tax-list">
       <% authors.forEach(function (a) { %>
         <div class="tax-item">
@@ -65,11 +65,11 @@
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <input class="input input-sm" name="name" value="<%= a.name %>" required>
             <a class="muted small" href="<%= catalogUrl('author', a.slug) %>"><%= a.n %></a>
-            <button class="icon-btn small" title="Сохранить" aria-label="Сохранить"><%- icon('check') %></button>
+            <button class="icon-btn small" title="<%= __('Сохранить') %>" aria-label="<%= __('Сохранить') %>"><%- icon('check') %></button>
           </form>
         </div>
       <% }) %>
-      <% if (!authors.length) { %><div class="empty">Авторов пока нет.</div><% } %>
+      <% if (!authors.length) { %><div class="empty"><%= __('Авторов пока нет.') %></div><% } %>
     </div>
   </section>
 </div>

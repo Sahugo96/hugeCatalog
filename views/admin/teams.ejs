@@ -1,32 +1,32 @@
 <%- include('../partials/header') %>
 <div class="container page-pad">
-  <h1>Модерация команд</h1>
+  <h1><%= __('Модерация команд') %></h1>
   <%- include('../partials/admin-nav') %>
   <div class="pills">
-    <a class="pill <%= status === 'pending' ? 'active' : '' %>" href="?status=pending">Ожидают</a>
-    <a class="pill <%= status === 'approved' ? 'active' : '' %>" href="?status=approved">Одобренные</a>
-    <a class="pill <%= status === 'rejected' ? 'active' : '' %>" href="?status=rejected">Отклонённые</a>
+    <a class="pill <%= status === 'pending' ? 'active' : '' %>" href="?status=pending"><%= __('Ожидают') %></a>
+    <a class="pill <%= status === 'approved' ? 'active' : '' %>" href="?status=approved"><%= __('Одобренные') %></a>
+    <a class="pill <%= status === 'rejected' ? 'active' : '' %>" href="?status=rejected"><%= __('Отклонённые') %></a>
   </div>
-  <% if (!teams.length) { %><div class="empty empty-lg"><%- icon('check') %><p>Здесь пусто.</p></div><% } %>
+  <% if (!teams.length) { %><div class="empty empty-lg"><%- icon('check') %><p><%= __('Здесь пусто.') %></p></div><% } %>
   <div class="mod-list">
     <% teams.forEach(function (t) { %>
       <article class="mod-item">
         <span class="team-avatar"><% if (t.avatar) { %><img src="<%= t.avatar %>" alt=""><% } else { %><%= t.name.slice(0, 1).toUpperCase() %><% } %></span>
         <div class="grow">
           <h3><a href="/team/<%= t.slug %>"><%= t.name %></a></h3>
-          <p class="muted small">Владелец: <a href="/user/<%= encodeURIComponent(t.owner_name) %>"><%= t.owner_name %></a> · подана <%= util.timeAgo(t.created_at) %> · участников: <%= t.members_count %> · тайтлов: <%= t.works_count %></p>
+          <p class="muted small"><%= __('Владелец:') %> <a href="/user/<%= encodeURIComponent(t.owner_name) %>"><%= t.owner_name %></a> <%= __('· подана') %> <%= util.timeAgo(t.created_at) %> <%= __('· участников:') %> <%= t.members_count %> <%= __('· тайтлов:') %> <%= t.works_count %></p>
           <% if (t.description) { %><p class="mod-desc"><%= t.description %></p><% } %>
-          <% if (t.reject_reason) { %><p class="small">Причина отказа: <%= t.reject_reason %></p><% } %>
+          <% if (t.reject_reason) { %><p class="small"><%= __('Причина отказа:') %> <%= t.reject_reason %></p><% } %>
         </div>
         <div class="mod-actions">
           <% if (t.status !== 'approved') { %>
-            <form method="post" action="/admin/teams/<%= t.id %>/approve"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-primary btn-sm"><%- icon('check') %>Одобрить</button></form>
+            <form method="post" action="/admin/teams/<%= t.id %>/approve"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-primary btn-sm"><%- icon('check') %><%= __('Одобрить') %></button></form>
           <% } %>
           <% if (t.status !== 'rejected') { %>
             <form method="post" action="/admin/teams/<%= t.id %>/reject" class="reject-form">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-              <input class="input input-sm" name="reason" placeholder="Причина отказа" required>
-              <button class="btn btn-danger btn-sm"><%= t.status === 'approved' ? 'Заблокировать' : 'Отклонить' %></button>
+              <input class="input input-sm" name="reason" placeholder="<%= __('Причина отказа') %>" required>
+              <button class="btn btn-danger btn-sm"><%= __(t.status === 'approved' ? 'Заблокировать' : 'Отклонить') %></button>
             </form>
           <% } %>
         </div>

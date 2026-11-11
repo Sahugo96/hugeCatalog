@@ -195,14 +195,23 @@ router.get('/api/authors', (req, res) => {
   res.json({ items });
 });
 
+/* ---------- Язык интерфейса ---------- */
+
+router.get('/lang/:code', (req, res) => {
+  const code = ['ru', 'en'].includes(req.params.code) ? req.params.code : 'ru';
+  res.cookie('lang', code, { maxAge: 365 * 24 * 60 * 60 * 1000, sameSite: 'lax', httpOnly: false });
+  const back = String(req.query.back || '/');
+  res.redirect(back.startsWith('/') && !back.startsWith('//') ? back : '/');
+});
+
 /* ---------- Статические страницы ---------- */
 
 router.get('/about', (req, res) => {
-  res.render('about', { title: 'О сайте', stats: W.siteStats() });
+  res.render(req.lang === 'en' ? 'about-en' : 'about', { title: 'О сайте', stats: W.siteStats() });
 });
 
 router.get('/privacy', (req, res) => {
-  res.render('privacy', { title: 'Политика конфиденциальности' });
+  res.render(req.lang === 'en' ? 'privacy-en' : 'privacy', { title: 'Политика конфиденциальности' });
 });
 
 module.exports = router;

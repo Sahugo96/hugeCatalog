@@ -44,6 +44,9 @@ const PATHS = {
   flag: '<path d="M4 22V4a1 1 0 0 1 1-1h12l-2 4 2 4H5"/>',
   ban: '<circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/>',
   more: '<circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>',
+  // Два игральных кубика (как Font Awesome «dice»): повёрнутый с пятёркой и прямой с единицей.
+  dice: '<rect x="3.35" y="3.35" width="11.3" height="11.3" rx="2.6" transform="rotate(45 9 9)"/><rect x="14" y="14" width="8.6" height="8.6" rx="2.3"/>'
+    + '<g fill="currentColor" stroke="none"><circle cx="9" cy="5.3" r="1.05"/><circle cx="5.3" cy="9" r="1.05"/><circle cx="9" cy="9" r="1.05"/><circle cx="12.7" cy="9" r="1.05"/><circle cx="9" cy="12.7" r="1.05"/><circle cx="18.3" cy="18.3" r="1.05"/></g>',
   home: '<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>',
 };
 

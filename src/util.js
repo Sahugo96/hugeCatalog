@@ -50,25 +50,26 @@ function parseDbDate(s) {
   return new Date(String(s).replace(' ', 'T') + (String(s).endsWith('Z') ? '' : 'Z'));
 }
 
-function timeAgo(s) {
+function timeAgo(s, lang = 'ru') {
   const d = parseDbDate(s);
   if (!d) return '';
+  const en = lang === 'en';
   const sec = Math.max(0, Math.round((Date.now() - d.getTime()) / 1000));
-  if (sec < 60) return 'только что';
+  if (sec < 60) return en ? 'just now' : 'только что';
   const min = Math.round(sec / 60);
-  if (min < 60) return `${min} ${plural(min, 'минуту', 'минуты', 'минут')} назад`;
+  if (min < 60) return en ? `${min} min ago` : `${min} ${plural(min, 'минуту', 'минуты', 'минут')} назад`;
   const h = Math.round(min / 60);
-  if (h < 24) return `${h} ${plural(h, 'час', 'часа', 'часов')} назад`;
+  if (h < 24) return en ? `${h} ${h === 1 ? 'hour' : 'hours'} ago` : `${h} ${plural(h, 'час', 'часа', 'часов')} назад`;
   const days = Math.round(h / 24);
-  if (days === 1) return 'вчера';
-  if (days < 7) return `${days} ${plural(days, 'день', 'дня', 'дней')} назад`;
-  return formatDate(s);
+  if (days === 1) return en ? 'yesterday' : 'вчера';
+  if (days < 7) return en ? `${days} days ago` : `${days} ${plural(days, 'день', 'дня', 'дней')} назад`;
+  return formatDate(s, lang);
 }
 
-function formatDate(s) {
+function formatDate(s, lang = 'ru') {
   const d = parseDbDate(s);
   if (!d) return '';
-  return d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Europe/Moscow' });
+  return d.toLocaleDateString(lang === 'en' ? 'en-GB' : 'ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Europe/Moscow' });
 }
 
 function compactNumber(n) {

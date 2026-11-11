@@ -21,6 +21,7 @@ function connect(req, res) {
   res.write('retry: 5000\n\n');
 
   const uid = req.user ? req.user.id : 0;
+  res.lang = req.lang || 'ru';
   if (!clients.has(uid)) clients.set(uid, new Set());
   clients.get(uid).add(res);
 
@@ -36,6 +37,8 @@ function connect(req, res) {
 }
 
 function send(res, event, data) {
+  // data может быть функцией (lang) => payload — для перевода под язык конкретного подключения.
+  if (typeof data === 'function') data = data(res.lang);
   try {
     res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
   } catch {

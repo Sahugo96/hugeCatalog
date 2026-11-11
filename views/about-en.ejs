@@ -1,0 +1,42 @@
+<%- include('partials/header') %>
+<div class="container narrow page-pad prose">
+  <h1>About</h1>
+  <p class="lead"><%= SITE_NAME %> is a catalog of manga, manhwa, manhua and comics with a comfortable reader. We collect translations from teams approved by the administration and help readers quickly find something they’ll love.</p>
+
+  <div class="stats-band">
+    <div><strong><%= util.compactNumber(stats.works) %></strong><span class="muted">titles</span></div>
+    <div><strong><%= util.compactNumber(stats.chapters) %></strong><span class="muted">chapters</span></div>
+    <div><strong><%= util.compactNumber(stats.teams) %></strong><span class="muted">teams</span></div>
+    <div><strong><%= util.compactNumber(stats.users) %></strong><span class="muted">readers</span></div>
+  </div>
+
+  <h2>What you can do here</h2>
+  <div class="feature-grid">
+    <div class="feature"><%- icon('layers') %><h3>Search</h3><p>A catalog with filters by genre, tag, type, language, year, status and age rating. Any criterion can be included or excluded.</p></div>
+    <div class="feature"><%- icon('book') %><h3>Read</h3><p>A reader with long-strip or page-by-page mode, keyboard shortcuts, saved progress and a dark theme.</p></div>
+    <div class="feature"><%- icon('heart') %><h3>Collect</h3><p>Like titles and add them to favorites — after signing up, everything is saved in your profile.</p></div>
+    <div class="feature"><%- icon('users') %><h3>Translate</h3><p>Create a team, wait for approval and publish your translations. New titles go through moderation.</p></div>
+  </div>
+
+  <h2>How to become a translation team</h2>
+  <ol class="steps">
+    <li><strong>Sign up</strong> — it takes a minute.</li>
+    <li><strong>Apply</strong> to create a team: a name and a few words about yourselves.</li>
+    <li><strong>Wait for approval</strong> by a moderator. The application status is shown on the team page and in the studio.</li>
+    <li><strong>Add titles</strong> in the studio: cover, authors, genres, tags, year, language and type. A title appears in the catalog after review.</li>
+    <li><strong>Upload chapters</strong> — just pick the page files; the order is taken from the file names.</li>
+  </ol>
+
+  <h2 id="rules">Rules</h2>
+  <ul>
+    <li>Publish only content you have the rights to, or translations permitted by the rights holders. Material is removed upon a justified complaint from a rights holder.</li>
+    <li>Set the correct age rating. 18+ content without the proper label will be rejected.</li>
+    <li>Material that breaks the law, spam and misleading descriptions are prohibited.</li>
+    <li>Respect other users and teams. Accounts may be blocked for violations.</li>
+    <li><strong>Chat:</strong> insults, spam and advertising, sharing pirate links or illegal content, and any attempts to use the chat for unlawful purposes are prohibited. Messages can be sent for review with the report button; the administration may review conversations and restrict access to the chat.</li>
+  </ul>
+
+  <h2>Contact us</h2>
+  <p>For partnerships, rights-holder complaints and suggestions, contact the site administration. Learn how we handle your data in the <a href="/privacy">privacy policy</a>.</p>
+</div>
+<%- include('partials/footer') %>

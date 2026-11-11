@@ -1,20 +1,20 @@
 <%- include('../partials/header') %>
 <div class="container narrow page-pad">
   <div class="page-head">
-    <h1>Уведомления</h1>
+    <h1><%= __('Уведомления') %></h1>
     <% if (items.some(function (n) { return !n.is_read; })) { %>
-      <form method="post" action="/api/notifications/read"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-ghost btn-sm"><%- icon('check') %>Отметить все прочитанными</button></form>
+      <form method="post" action="/api/notifications/read"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-ghost btn-sm"><%- icon('check') %><%= __('Отметить все прочитанными') %></button></form>
     <% } %>
   </div>
   <% if (!items.length) { %>
-    <div class="empty empty-lg"><%- icon('bell') %><p>Уведомлений пока нет. Добавляйте тайтлы в избранное — мы сообщим о новых главах.</p></div>
+    <div class="empty empty-lg"><%- icon('bell') %><p><%= __('Уведомлений пока нет. Добавляйте тайтлы в избранное — мы сообщим о новых главах.') %></p></div>
   <% } %>
   <ul class="notif-page">
     <% items.forEach(function (n) { %>
       <li class="<%= n.is_read ? '' : 'unread' %>">
         <a href="/notifications/<%= n.id %>/go">
           <span class="notif-icon notif-<%= n.type %>"><%- icon({ new_chapter: 'book', team_approved: 'check', work_approved: 'check', team_rejected: 'x', work_rejected: 'x', team_member: 'users', report: 'flag', mute: 'ban', team_pending: 'users', work_pending: 'upload' }[n.type] || 'bell') %></span>
-          <span class="notif-text"><strong><%= n.title %></strong><% if (n.body) { %><span class="muted"><%= n.body %></span><% } %></span>
+          <span class="notif-text"><strong><%= __(n.title) %></strong><% if (n.body) { %><span class="muted"><%= __(n.body) %></span><% } %></span>
           <time class="muted small nowrap"><%= util.timeAgo(n.created_at) %></time>
         </a>
       </li>
