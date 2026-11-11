@@ -41,6 +41,7 @@ work('Скрытый', { genres: ['Боевик'], moderation: 'pending' });
 
 test('slugify транслитерирует кириллицу', () => {
   assert.strictEqual(util.slugify('Клинок северного ветра!'), 'klinok-severnogo-vetra');
+  assert.ok(!util.slugify('a '.repeat(39) + 'bb cc').endsWith('-'), 'длинный slug без дефиса на конце');
   assert.strictEqual(util.plural(21, 'глава', 'главы', 'глав'), 'глава');
   assert.strictEqual(util.plural(12, 'глава', 'главы', 'глав'), 'глав');
 });
