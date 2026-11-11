@@ -93,8 +93,22 @@ router.post('/works/:id/approve', (req, res) => {
   res.redirect(String(req.body.back || '').startsWith('/') && !String(req.body.back).startsWith('//') ? req.body.back : '/admin/works');
 });
 
+/** Причина «admin» у администратора — команда полного удаления произведения из базы. */
+const DELETE_COMMAND = 'admin';
+
 router.post('/works/:id/reject', (req, res) => {
   const reason = String(req.body.reason || '').trim().slice(0, 1000) || 'Без указания причины';
+  if (reason.toLowerCase() === DELETE_COMMAND && isAdmin(req.user)) {
+    const work = q('SELECT id, title, cover, group_id, uploader_id, team_id FROM works WHERE id = ?').get(toInt(req.params.id));
+    if (work) {
+      const recipients = [work.uploader_id, ...N.teamMemberIds(work.team_id)].filter(Boolean);
+      W.deleteWork(work);
+      Chat.log(req.user.id, 'delete_work', `work:${work.id}`, work.title);
+      N.notify(recipients, { type: 'work_rejected', title: `«${work.title}» удалено администрацией`, body: '', link: '/studio' }, { exclude: [req.user.id] });
+      req.flash('success', `«${work.title}» полностью удалено из базы.`);
+    }
+    return res.redirect('/admin/works' + (req.body.status ? `?status=${encodeURIComponent(req.body.status)}` : ''));
+  }
   q(`UPDATE works SET moderation = 'rejected', reject_reason = ? WHERE id = ?`).run(reason, toInt(req.params.id));
   notifyWorkTeam(toInt(req.params.id), req.user.id, (w) => ({ type: 'work_rejected', title: `«${w.title}» отклонено`, body: `Причина: ${reason}`, link: `/studio/works/${w.id}` }));
   W.bumpTextIndex();

@@ -536,6 +536,22 @@ function similarByPlot(workId, limit = 12) {
 
 /* ======================= Главы ======================= */
 
+/**
+ * Полностью удаляет произведение: запись, главы, страницы, лайки, избранное, историю,
+ * файлы обложки и страниц; распускает связку языковых версий, если в ней остаётся одна.
+ */
+function deleteWork(work) {
+  const { removeDir, removePublic } = require('../upload');
+  const { cleanupGroup } = require('./versions');
+  const chapterIds = q('SELECT id FROM chapters WHERE work_id = ?').all(work.id).map((c) => c.id);
+  q('DELETE FROM works WHERE id = ?').run(work.id); // связанные строки удаляются каскадом
+  cleanupGroup(work.group_id);
+  chapterIds.forEach((id) => removeDir(`chapters/${id}`));
+  removePublic(work.cover);
+  q('DELETE FROM authors WHERE id NOT IN (SELECT author_id FROM work_authors)').run();
+  bumpTextIndex();
+}
+
 function refreshLastChapter(workId) {
   q(`UPDATE works SET last_chapter_at = (SELECT MAX(created_at) FROM chapters WHERE work_id = ? AND pages_count > 0) WHERE id = ?`).run(workId, workId);
 }
@@ -572,5 +588,6 @@ module.exports = {
   similarByPlot,
   bumpTextIndex,
   refreshLastChapter,
+  deleteWork,
   tokenize,
 };

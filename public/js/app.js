@@ -92,6 +92,16 @@
   }, 6000);
 
   /* ---------- Подтверждение опасных действий ---------- */
+  // Причина «admin» в форме снятия с публикации — полное удаление произведения.
+  document.addEventListener('submit', function (e) {
+    var f = e.target.closest('[data-delete-command]');
+    if (!f) return;
+    var reason = f.querySelector('[name="reason"]');
+    if (reason && reason.value.trim().toLowerCase() === f.getAttribute('data-delete-command') && !window.confirm(f.getAttribute('data-delete-confirm'))) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    }
+  }, true);
   document.addEventListener('submit', function (e) {
     var f = e.target.closest('[data-confirm]');
     if (f && !window.confirm(f.getAttribute('data-confirm'))) e.preventDefault();

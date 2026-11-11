@@ -251,12 +251,7 @@ router.post('/works/:id/delete', loadEditableWork, (req, res) => {
     req.flash('error', 'Удалить произведение может только владелец команды или администрация.');
     return res.redirect(`/studio/works/${work.id}`);
   }
-  const chapterIds = q('SELECT id FROM chapters WHERE work_id = ?').all(work.id).map((c) => c.id);
-  q('DELETE FROM works WHERE id = ?').run(work.id);
-  V.cleanupGroup(work.group_id);
-  chapterIds.forEach((id) => removeDir(`chapters/${id}`));
-  removePublic(work.cover);
-  W.bumpTextIndex();
+  W.deleteWork(work);
   req.flash('success', `«${work.title}» удалено.`);
   res.redirect('/studio');
 });

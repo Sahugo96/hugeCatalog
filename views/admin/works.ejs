@@ -34,8 +34,9 @@
             <form method="post" action="/admin/works/<%= w.id %>/approve"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-primary btn-sm"><%- icon('check') %><%= __('Опубликовать') %></button></form>
           <% } %>
           <% if (w.moderation !== 'rejected') { %>
-            <form method="post" action="/admin/works/<%= w.id %>/reject" class="reject-form">
+            <form method="post" action="/admin/works/<%= w.id %>/reject" class="reject-form"<% if (isAdmin) { %> data-delete-command="admin" data-delete-confirm="<%= __('Причина «admin» полностью удалит «{title}» из базы вместе с главами, страницами и обложкой. Это нельзя отменить. Продолжить?', { title: w.title }) %>"<% } %>>
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <input type="hidden" name="status" value="<%= status %>">
               <input class="input input-sm" name="reason" placeholder="<%= __('Причина') %>" required>
               <button class="btn btn-danger btn-sm"><%= __(w.moderation === 'approved' ? 'Снять с публикации' : 'Отклонить') %></button>
             </form>
