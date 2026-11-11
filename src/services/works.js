@@ -8,7 +8,7 @@ const { sameGroupIds } = require('./versions');
 /** Поля для карточек произведений. */
 const CARD = `w.id, w.slug, w.title, w.cover, w.type, w.status, w.year, w.language, w.age_rating,
   w.views, w.likes_count, w.favs_count, w.published_at, w.last_chapter_at,
-  (SELECT COUNT(*) FROM chapters c WHERE c.work_id = w.id) AS chapters_count`;
+  (SELECT COUNT(*) FROM chapters c WHERE c.work_id = w.id AND c.pages_count > 0) AS chapters_count`;
 
 const APPROVED = `w.moderation = 'approved'`;
 
@@ -44,7 +44,7 @@ function getTaxonomy(workId) {
 
 function getWork(where, value) {
   const work = q(`SELECT w.*, t.name AS team_name, t.slug AS team_slug, u.username AS uploader_name,
-      (SELECT COUNT(*) FROM chapters c WHERE c.work_id = w.id) AS chapters_count
+      (SELECT COUNT(*) FROM chapters c WHERE c.work_id = w.id AND c.pages_count > 0) AS chapters_count
     FROM works w
     LEFT JOIN teams t ON t.id = w.team_id
     LEFT JOIN users u ON u.id = w.uploader_id
@@ -59,12 +59,16 @@ function getWork(where, value) {
 const getWorkBySlug = (slug) => getWork('slug', slug);
 const getWorkById = (id) => getWork('id', id);
 
-function getChapters(workId, order = 'DESC') {
+/**
+ * Главы произведения. По умолчанию — только со страницами: главы-каркасы из импорта
+ * (pages_count = 0) видны лишь в студии, пока команда не загрузит страницы.
+ */
+function getChapters(workId, order = 'DESC', { includeEmpty = false } = {}) {
   const dir = order === 'ASC' ? 'ASC' : 'DESC';
   return q(`SELECT c.id, c.volume, c.number, c.title, c.created_at, c.views, c.pages_count,
       t.name AS team_name, t.slug AS team_slug
     FROM chapters c LEFT JOIN teams t ON t.id = c.team_id
-    WHERE c.work_id = ? ORDER BY c.number ${dir}, c.id ${dir}`).all(workId);
+    WHERE c.work_id = ? ${includeEmpty ? '' : 'AND c.pages_count > 0'} ORDER BY c.number ${dir}, c.id ${dir}`).all(workId);
 }
 
 function upsertAuthor(name) {
@@ -300,7 +304,7 @@ function searchCatalog(f, perPage = 30) {
   }
   if (f.year_from !== null) { where.push('w.year >= ?'); params.push(f.year_from); }
   if (f.year_to !== null) { where.push('w.year <= ?'); params.push(f.year_to); }
-  const chCount = '(SELECT COUNT(*) FROM chapters c WHERE c.work_id = w.id)';
+  const chCount = '(SELECT COUNT(*) FROM chapters c WHERE c.work_id = w.id AND c.pages_count > 0)';
   if (f.ch_from !== null) { where.push(`${chCount} >= ?`); params.push(f.ch_from); }
   if (f.ch_to !== null) { where.push(`${chCount} <= ?`); params.push(f.ch_to); }
 
@@ -339,7 +343,7 @@ function latestUpdates(limit = 12) {
     ORDER BY w.last_chapter_at DESC LIMIT ?`).all(limit);
   const chStmt = q(`SELECT c.id, c.number, c.volume, c.title, c.created_at, t.name AS team_name
     FROM chapters c LEFT JOIN teams t ON t.id = c.team_id
-    WHERE c.work_id = ? ORDER BY c.created_at DESC, c.number DESC LIMIT 3`);
+    WHERE c.work_id = ? AND c.pages_count > 0 ORDER BY c.created_at DESC, c.number DESC LIMIT 3`);
   works.forEach((w) => { w.recentChapters = chStmt.all(w.id); });
   return works;
 }
@@ -389,7 +393,7 @@ function continueReading(userId, limit = 8) {
 function siteStats() {
   return q(`SELECT
     (SELECT COUNT(*) FROM works WHERE moderation = 'approved') AS works,
-    (SELECT COUNT(*) FROM chapters c JOIN works w ON w.id = c.work_id WHERE w.moderation = 'approved') AS chapters,
+    (SELECT COUNT(*) FROM chapters c JOIN works w ON w.id = c.work_id WHERE w.moderation = 'approved' AND c.pages_count > 0) AS chapters,
     (SELECT COUNT(*) FROM users) AS users,
     (SELECT COUNT(*) FROM teams WHERE status = 'approved') AS teams`).get();
 }
@@ -533,7 +537,7 @@ function similarByPlot(workId, limit = 12) {
 /* ======================= Главы ======================= */
 
 function refreshLastChapter(workId) {
-  q(`UPDATE works SET last_chapter_at = (SELECT MAX(created_at) FROM chapters WHERE work_id = ?) WHERE id = ?`).run(workId, workId);
+  q(`UPDATE works SET last_chapter_at = (SELECT MAX(created_at) FROM chapters WHERE work_id = ? AND pages_count > 0) WHERE id = ?`).run(workId, workId);
 }
 
 module.exports = {

@@ -21,6 +21,9 @@ function hasColumn(table, column) {
 if (!hasColumn('works', 'group_id')) db.exec('ALTER TABLE works ADD COLUMN group_id INTEGER');
 db.exec('CREATE INDEX IF NOT EXISTS idx_works_group ON works(group_id)');
 // Запрет писать в чат до указанного времени (UTC, формат SQLite).
+// Ключ серии из импорта: выпуски одной серии на одном языке собираются в одно произведение.
+if (!hasColumn('works', 'import_key')) db.exec('ALTER TABLE works ADD COLUMN import_key TEXT');
+db.exec('CREATE INDEX IF NOT EXISTS idx_works_import_key ON works(import_key, language)');
 if (!hasColumn('users', 'chat_muted_until')) db.exec('ALTER TABLE users ADD COLUMN chat_muted_until TEXT');
 
 /** Выполнить функцию в транзакции. Поддерживает вложенные вызовы. */

@@ -26,7 +26,7 @@ const W = require('./works');
 const V = require('./versions');
 const { storeImage, detectImageExt } = require('../upload');
 const { UPLOAD_DIR } = require('../db');
-const { searchNormalize, uniqueSlug } = require('../util');
+const { searchNormalize, uniqueSlug, slugify } = require('../util');
 
 const MAX_COVER = 8 * 1024 * 1024;
 
@@ -74,6 +74,54 @@ async function downloadCover(url) {
  * Импортирует записи. Возвращает отчёт: [{ title, status: 'created'|'skipped'|'error', slug, messages }]
  * options: { uploaderId, createMissing, skipCovers }
  */
+function chapterOf(raw) {
+  const c = raw.chapter;
+  if (c === undefined || c === null || c === '') return null;
+  const obj = typeof c === 'object' ? c : { number: c };
+  const number = Number(String(obj.number ?? '').replace(',', '.'));
+  if (!Number.isFinite(number) || number < 0) return null;
+  const volume = Number.parseInt(obj.volume, 10);
+  return { number, volume: Number.isFinite(volume) ? volume : null, title: String(obj.title || '').trim().slice(0, 200) };
+}
+
+/** Глава-каркас без страниц: появится у читателей, когда команда загрузит страницы в студии. */
+function addChapterSkeleton(workId, ch, translator, uploaderId, entry) {
+  if (q('SELECT 1 FROM chapters WHERE work_id = ? AND number = ?').get(workId, ch.number)) {
+    entry.messages.push(`глава ${ch.number} уже есть`);
+    return false;
+  }
+  let teamId = null;
+  if (translator) {
+    const team = q(`SELECT id FROM teams WHERE name = ? AND status = 'approved'`).get(String(translator));
+    if (team) teamId = team.id; else entry.messages.push(`команда перевода «${translator}» не найдена на сайте`);
+  }
+  q('INSERT INTO chapters (work_id, volume, number, title, team_id, uploader_id, pages_count) VALUES (?, ?, ?, ?, ?, ?, 0)')
+    .run(workId, ch.volume, ch.number, ch.title, teamId, uploaderId || null);
+  return true;
+}
+
+/** Связывает произведение с версиями той же серии на других языках. */
+function linkSeries(key, workId, entry) {
+  const others = q('SELECT id FROM works WHERE import_key = ? AND id != ?').all(key, workId);
+  let linked = false;
+  for (const o of others) {
+    try {
+      V.linkWorks(o.id, workId);
+      linked = true;
+    } catch (err) {
+      if (!/уже связаны/.test(err.message)) entry.messages.push(`не связано: ${err.message}`);
+    }
+  }
+  if (linked) entry.messages.push('связано с другими языковыми версиями');
+}
+
+/**
+ * Импортирует записи. Возвращает отчёт: [{ title, status: 'created'|'updated'|'skipped'|'error', slug, messages }]
+ * options: { uploaderId, createMissing, skipCovers }
+ *
+ * Если у записи есть series, выпуски одной серии на одном языке собираются в одно произведение:
+ * первая запись создаёт его, следующие добавляют главы (chapter).
+ */
 async function importWorks(input, options = {}) {
   const items = Array.isArray(input) ? input : [input];
   const genres = new Map(q('SELECT id, name FROM genres').all().map((g) => [searchNormalize(g.name), g.id]));
@@ -88,7 +136,38 @@ async function importWorks(input, options = {}) {
       if (!raw || typeof raw !== 'object') throw new Error('запись должна быть объектом');
 
       const language = pick(C.LANGUAGES, raw.language);
-      const dup = q('SELECT slug FROM works WHERE title = ? AND language = ?').get(String(raw.title || '').trim(), language || '');
+      const seriesKey = raw.series ? slugify(raw.series) : null;
+      const chapter = chapterOf(raw);
+      const getCover = async () => {
+        if (!raw.cover_url || options.skipCovers) return null;
+        try {
+          return await downloadCover(String(raw.cover_url));
+        } catch (err) {
+          entry.messages.push(`обложка: ${err.message} — загрузите вручную`);
+          return null;
+        }
+      };
+
+      // Серия на этом языке уже есть — добавляем главу.
+      if (seriesKey && language) {
+        const existing = q('SELECT id, slug, title, cover FROM works WHERE import_key = ? AND language = ?').get(seriesKey, language);
+        if (existing) {
+          entry.slug = existing.slug;
+          entry.title = existing.title;
+          const added = chapter ? addChapterSkeleton(existing.id, chapter, raw.translator, options.uploaderId, entry) : false;
+          if (added) entry.messages.unshift(`Глава ${chapter.number} добавлена в «${existing.title}»`);
+          else if (!chapter) entry.messages.push('уже есть в базе');
+          if (!existing.cover) {
+            const cover = await getCover();
+            if (cover) q('UPDATE works SET cover = ? WHERE id = ?').run(cover, existing.id);
+          }
+          linkSeries(seriesKey, existing.id, entry);
+          entry.status = added ? 'updated' : 'skipped';
+          continue;
+        }
+      }
+
+      const dup = !seriesKey && q('SELECT slug FROM works WHERE title = ? AND language = ?').get(String(raw.title || '').trim(), language || '');
       if (dup) {
         entry.status = 'skipped';
         entry.slug = dup.slug;
@@ -135,19 +214,16 @@ async function importWorks(input, options = {}) {
         if (team) teamId = team.id; else entry.messages.push(`команда «${raw.team}» не найдена`);
       }
 
-      let cover = null;
-      if (raw.cover_url && !options.skipCovers) {
-        try {
-          cover = await downloadCover(String(raw.cover_url));
-        } catch (err) {
-          entry.messages.push(`обложка: ${err.message} — загрузите вручную`);
-        }
-      }
-
+      const cover = await getCover();
       const id = W.saveWork(data, { teamId, uploaderId: options.uploaderId || null, moderation: 'approved', cover });
+      if (seriesKey) q('UPDATE works SET import_key = ? WHERE id = ?').run(seriesKey, id);
       entry.slug = q('SELECT slug FROM works WHERE id = ?').get(id).slug;
       entry.status = 'created';
+      if (chapter && addChapterSkeleton(id, chapter, raw.translator, options.uploaderId, entry)) {
+        entry.messages.unshift(`Глава ${chapter.number} добавлена в «${data.title}»`);
+      }
 
+      if (seriesKey) linkSeries(seriesKey, id, entry);
       const linkTargets = [];
       if (raw.group) {
         if (groups.has(raw.group)) linkTargets.push(groups.get(raw.group));

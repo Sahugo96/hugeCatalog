@@ -155,7 +155,7 @@ router.post('/works/new', coverUpload.single('cover'), verifyCsrf, (req, res) =>
 router.get('/works/:id', loadEditableWork, (req, res) => {
   const work = req.work;
   res.render('studio/work', {
-    title: work.title, work, chapters: W.getChapters(work.id, 'DESC'),
+    title: work.title, work, chapters: W.getChapters(work.id, 'DESC', { includeEmpty: true }),
     versions: V.getVersions(work.id, { onlyApproved: false }),
   });
 });
@@ -390,6 +390,19 @@ router.post('/chapters/:cid/edit', pagesUpload.array('pages', 500), verifyCsrf, 
     q('DELETE FROM pages WHERE chapter_id = ?').run(chapter.id);
     old.forEach((p) => removePublic(p.path));
     storePages(chapter.id, req.files);
+    if (!chapter.pages_count) {
+      // Глава-каркас получила первые страницы: она появляется у читателей как новая.
+      q(`UPDATE chapters SET created_at = datetime('now') WHERE id = ?`).run(chapter.id);
+      W.refreshLastChapter(work.id);
+      if (work.moderation === 'approved') {
+        N.notify(N.favoriteUserIds(work.id), {
+          type: 'new_chapter',
+          title: `Новая глава: ${work.title}`,
+          body: `Глава ${data.number}${data.title ? ' — ' + data.title : ''}`,
+          link: `/title/${work.slug}/chapter/${chapter.id}`,
+        }, { exclude: [req.user.id] });
+      }
+    }
   }
   req.flash('success', 'Глава сохранена.');
   finish(req, res, `/studio/works/${work.id}#chapters`);

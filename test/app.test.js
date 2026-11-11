@@ -132,7 +132,7 @@ test('импорт из JSON: создание, связь по group, проп�
 });
 
 test('просмотры: только прочтение главы вошедшим пользователем, один раз на главу', async (t) => {
-  const ch = Number(q('INSERT INTO chapters (work_id, number) VALUES (?, 1)').run(b).lastInsertRowid);
+  const ch = Number(q('INSERT INTO chapters (work_id, number, pages_count) VALUES (?, 1, 1)').run(b).lastInsertRowid);
   const slug = q('SELECT slug FROM works WHERE id = ?').get(b).slug;
   const views = () => q('SELECT views FROM works WHERE id = ?').get(b).views;
   const before = views();

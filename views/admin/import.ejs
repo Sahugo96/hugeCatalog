@@ -9,7 +9,7 @@
       <ul class="import-report">
         <% report.forEach(function (r) { %>
           <li class="import-<%= r.status %>">
-            <span class="status status-<%= { created: 'approved', skipped: 'pending', error: 'rejected' }[r.status] %>"><%= __({ created: 'создано', skipped: 'пропущено', error: 'ошибка' }[r.status]) %></span>
+            <span class="status status-<%= { created: 'approved', updated: 'approved', skipped: 'pending', error: 'rejected' }[r.status] %>"><%= __({ created: 'создано', updated: 'глава добавлена', skipped: 'пропущено', error: 'ошибка' }[r.status]) %></span>
             <% if (r.slug) { %><a href="/title/<%= r.slug %>"><%= r.title %></a><% } else { %><strong><%= r.title %></strong><% } %>
             <% if (r.slug && r.status === 'created') { %><a class="small" href="/title/<%= r.slug %>"><%= __('открыть') %></a><% } %>
             <% if (r.messages.length) { %><div class="muted small"><%= r.messages.map(function (m) { return __(m); }).join(' · ') %></div><% } %>

@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "HugeCatalog: импорт с 3hentai",
+  "version": "1.0.0",
+  "description": "Копирует данные открытой галереи 3hentai в буфер обмена в формате импорта HugeCatalog.",
+  "action": {
+    "default_title": "Скопировать для импорта в HugeCatalog",
+    "default_popup": "popup.html",
+    "default_icon": { "16": "icons/16.png", "32": "icons/32.png", "48": "icons/48.png", "128": "icons/128.png" }
+  },
+  "icons": { "16": "icons/16.png", "32": "icons/32.png", "48": "icons/48.png", "128": "icons/128.png" },
+  "permissions": ["activeTab", "scripting", "storage", "clipboardWrite"],
+  "browser_specific_settings": {
+    "gecko": { "id": "hugecatalog-import@localhost", "strict_min_version": "115.0" }
+  }
+}

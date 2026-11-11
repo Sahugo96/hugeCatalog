@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>HugeCatalog: импорт</title>
+  <style>
+    :root { --bg: #fff; --text: #171923; --muted: #6b7189; --border: #e1e4ee; --soft: #eef0f6; --accent: #6c4cf5; --ok: #12a150; --err: #e5384b; color-scheme: light dark; }
+    @media (prefers-color-scheme: dark) { :root { --bg: #171a22; --text: #eceef4; --muted: #8d93a6; --border: #262a35; --soft: #1e222c; --accent: #8b72ff; --ok: #34c473; --err: #ff5d6e; } }
+    * { box-sizing: border-box; }
+    body { margin: 0; width: 380px; font: 13px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); }
+    header { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+    header b { font-size: 14px; }
+    .logo { width: 22px; height: 22px; border-radius: 6px; background: linear-gradient(135deg, #6c4cf5, #e0479e); color: #fff; display: grid; place-items: center; font-weight: 900; font-size: 13px; }
+    main { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .status { padding: 8px 10px; border-radius: 8px; background: var(--soft); font-weight: 600; }
+    .status.ok { color: var(--ok); }
+    .status.err { color: var(--err); }
+    dl { display: grid; grid-template-columns: max-content 1fr; gap: 3px 10px; margin: 0; }
+    dt { color: var(--muted); }
+    dd { margin: 0; overflow-wrap: anywhere; }
+    .warn { color: var(--muted); font-size: 12px; }
+    pre { margin: 0; max-height: 160px; overflow: auto; padding: 8px; border-radius: 8px; background: var(--soft); font-size: 11px; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    button { font: inherit; font-weight: 600; border: 1px solid var(--border); background: var(--bg); color: var(--text); border-radius: 8px; padding: 6px 10px; cursor: pointer; }
+    button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    label { display: flex; gap: 6px; align-items: center; cursor: pointer; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <header><span class="logo">H</span><b>Импорт в HugeCatalog</b></header>
+  <main>
+    <div class="status" id="status">Читаю страницу…</div>
+    <dl id="summary" hidden></dl>
+    <div class="warn" id="warn" hidden></div>
+    <label><input type="checkbox" id="collect"> Собирать несколько галерей в один импорт</label>
+    <div class="row" id="collect-row" hidden>
+      <span id="collect-count"></span>
+      <button id="clear">Очистить список</button>
+    </div>
+    <div class="row">
+      <button class="primary" id="copy" disabled>Скопировать ещё раз</button>
+    </div>
+    <pre id="json" hidden></pre>
+    <div class="warn">Вставьте содержимое буфера в «Админка → Импорт» и отметьте «Создавать отсутствующие жанры и теги». Главы одной серии на одном языке соберутся в одно произведение, версии на разных языках свяжутся.</div>
+  </main>
+  <script src="extract.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

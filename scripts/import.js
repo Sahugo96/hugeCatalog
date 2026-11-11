@@ -22,7 +22,7 @@ importWorks(JSON.parse(fs.readFileSync(file, 'utf8')), {
   createMissing: args.includes('--create-missing'),
   skipCovers: args.includes('--skip-covers'),
 }).then((report) => {
-  const icon = { created: '+', skipped: '=', error: '!' };
+  const icon = { created: '+', updated: '~', skipped: '=', error: '!' };
   report.forEach((r) => console.log(`${icon[r.status]} ${r.title}${r.slug ? ` (/title/${r.slug})` : ''}${r.messages.length ? ' — ' + r.messages.join('; ') : ''}`));
   const created = report.filter((r) => r.status === 'created').length;
   console.log(`Создано: ${created} из ${report.length}`);

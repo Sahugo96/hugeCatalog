@@ -62,7 +62,7 @@ router.get('/catalog', (req, res) => {
   else if (filters.author.length === 1 && W.countActiveFilters(filters) === 1 && selectedAuthors[0]) heading = `Автор: ${selectedAuthors[0].name}`;
   else if (filters.team.length === 1 && W.countActiveFilters(filters) === 1 && selectedTeams[0]) heading = `Команда: ${selectedTeams[0].name}`;
 
-  const maxChapters = q('SELECT COALESCE(MAX(n), 0) AS m FROM (SELECT COUNT(*) AS n FROM chapters GROUP BY work_id)').get().m;
+  const maxChapters = q('SELECT COALESCE(MAX(n), 0) AS m FROM (SELECT COUNT(*) AS n FROM chapters WHERE pages_count > 0 GROUP BY work_id)').get().m;
 
   res.render('catalog', {
     title: heading,
@@ -100,7 +100,7 @@ router.get('/title/:slug', (req, res, next) => {
   if (!work) return next();
   const order = req.query.order === 'asc' ? 'ASC' : 'DESC';
   const chapters = W.getChapters(work.id, order);
-  const firstChapter = q('SELECT id FROM chapters WHERE work_id = ? ORDER BY number ASC, id ASC LIMIT 1').get(work.id);
+  const firstChapter = q('SELECT id FROM chapters WHERE work_id = ? AND pages_count > 0 ORDER BY number ASC, id ASC LIMIT 1').get(work.id);
   const lastRead = req.user
     ? q(`SELECT c.id, c.number FROM reading_history rh JOIN chapters c ON c.id = rh.chapter_id
          WHERE rh.user_id = ? AND rh.work_id = ?`).get(req.user.id, work.id)
@@ -135,7 +135,7 @@ router.get('/title/:slug/chapter/:id', (req, res, next) => {
   const chapterId = toInt(req.params.id);
   const chapter = q(`SELECT c.*, t.name AS team_name, t.slug AS team_slug FROM chapters c
     LEFT JOIN teams t ON t.id = c.team_id WHERE c.id = ? AND c.work_id = ?`).get(chapterId, work.id);
-  if (!chapter) return next();
+  if (!chapter || (!chapter.pages_count && !canEditWork(req.user, work))) return next();
   const pages = q('SELECT idx, path FROM pages WHERE chapter_id = ? ORDER BY idx').all(chapter.id);
   const chapters = W.getChapters(work.id, 'ASC');
   const pos = chapters.findIndex((c) => c.id === chapter.id);

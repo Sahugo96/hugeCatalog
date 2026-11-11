@@ -72,7 +72,8 @@
           <tbody>
             <% chapters.forEach(function (c) { %>
               <tr>
-                <td><a href="/title/<%= w.slug %>/chapter/<%= c.id %>"><%= __(c.volume ? 'Т. ' + c.volume + ' ' : '') %><%= __('Гл.') %> <%= util.formatChapterNumber(c.number) %></a><% if (c.title) { %> <span class="muted">— <%= c.title %></span><% } %></td>
+                <td><a href="/title/<%= w.slug %>/chapter/<%= c.id %>"><%= __(c.volume ? 'Т. ' + c.volume + ' ' : '') %><%= __('Гл.') %> <%= util.formatChapterNumber(c.number) %></a><% if (c.title) { %> <span class="muted">— <%= c.title %></span><% } %>
+                  <% if (!c.pages_count) { %> <a class="status status-pending" href="/studio/chapters/<%= c.id %>/edit" title="<%= __('Глава скрыта от читателей, пока не загружены страницы') %>"><%= __('нет страниц — загрузить') %></a><% } %></td>
                 <td class="hide-sm"><%= c.team_name || '—' %></td>
                 <td class="hide-sm"><%= c.pages_count %></td>
                 <td class="nowrap"><%= util.formatDate(c.created_at) %></td>
