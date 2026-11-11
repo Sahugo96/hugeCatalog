@@ -3,6 +3,7 @@
 const express = require('express');
 const { q, db } = require('../db');
 const W = require('../services/works');
+const { importWorks } = require('../services/import');
 const C = require('../constants');
 const { requireStaff, requireAdmin } = require('../auth');
 const { uniqueSlug, toInt, searchNormalize, escapeLike } = require('../util');
@@ -82,6 +83,25 @@ router.post('/works/:id/reject', (req, res) => {
   W.bumpTextIndex();
   req.flash('success', 'Произведение отклонено, команда увидит причину в студии.');
   res.redirect('/admin/works');
+});
+
+/* ---------- Импорт произведений из JSON ---------- */
+
+router.get('/import', (req, res) => {
+  res.render('admin/import', { title: 'Импорт произведений', json: '', report: null, error: null, options: {} });
+});
+
+router.post('/import', async (req, res) => {
+  const json = String(req.body.json || '');
+  const options = { createMissing: !!req.body.create_missing, skipCovers: !!req.body.skip_covers };
+  let data;
+  try {
+    data = JSON.parse(json);
+  } catch (err) {
+    return res.status(400).render('admin/import', { title: 'Импорт произведений', json, report: null, options, error: `Ошибка в JSON: ${err.message}` });
+  }
+  const report = await importWorks(data, { ...options, uploaderId: req.user.id });
+  res.render('admin/import', { title: 'Импорт произведений', json: '', report, error: null, options });
 });
 
 /* ---------- Пользователи (только админ) ---------- */

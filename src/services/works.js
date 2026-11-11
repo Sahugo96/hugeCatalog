@@ -3,6 +3,7 @@
 const { q, db, transaction } = require('../db');
 const C = require('../constants');
 const { uniqueSlug, searchNormalize, escapeLike, today, toArray, toInt } = require('../util');
+const { sameGroupIds } = require('./versions');
 
 /** Поля для карточек произведений. */
 const CARD = `w.id, w.slug, w.title, w.cover, w.type, w.status, w.year, w.language, w.age_rating,
@@ -102,7 +103,7 @@ function validateWorkInput(body) {
   if (!data.title) errors.push('Укажите название.');
   if (!C.values(C.TYPES).includes(data.type)) errors.push('Выберите тип произведения.');
   if (!C.values(C.STATUSES).includes(data.status)) errors.push('Выберите статус.');
-  if (!C.values(C.LANGUAGES).includes(data.language)) errors.push('Выберите язык оригинала.');
+  if (!C.values(C.LANGUAGES).includes(data.language)) errors.push('Выберите язык произведения.');
   if (!C.values(C.AGE_RATINGS).includes(data.age_rating)) errors.push('Выберите возрастной рейтинг.');
   const maxYear = new Date().getFullYear() + 1;
   if (data.year !== null && (data.year < 1900 || data.year > maxYear)) errors.push(`Год должен быть между 1900 и ${maxYear}.`);
@@ -387,6 +388,12 @@ function siteStats() {
 
 /* ======================= Похожие произведения ======================= */
 
+/** Убирает из списка другие языковые версии того же произведения. */
+function withoutVersions(workId, rows, limit) {
+  const skip = sameGroupIds(workId);
+  return rows.filter((r) => !skip.has(r.id)).slice(0, limit);
+}
+
 /** По жанрам и тегам: жанр весит 2, тег — 1, нормируется на размеры наборов. */
 function similarByTaxonomy(workId, limit = 12) {
   const rows = q(`
@@ -403,8 +410,8 @@ function similarByTaxonomy(workId, limit = 12) {
       (1.0 + (SELECT COUNT(*) FROM work_genres WHERE work_id = w.id) * 0.3 + (SELECT COUNT(*) FROM work_tags WHERE work_id = w.id) * 0.15) AS rank
     FROM scores JOIN works w ON w.id = scores.work_id
     WHERE w.id != ? AND ${APPROVED}
-    ORDER BY rank DESC, w.views DESC LIMIT ?`).all(workId, workId, workId, limit);
-  return attachCardGenres(rows);
+    ORDER BY rank DESC, w.views DESC LIMIT ?`).all(workId, workId, workId, limit + 10);
+  return attachCardGenres(withoutVersions(workId, rows, limit));
 }
 
 /** По рисовке: общий художник, теги группы «Рисовка», совпадение типа. */
@@ -423,8 +430,8 @@ function similarByArt(workId, limit = 12) {
     SELECT ${CARD}, scores.score + (CASE WHEN w.type = (SELECT type FROM me) THEN 0.5 ELSE 0 END) AS rank
     FROM scores JOIN works w ON w.id = scores.work_id
     WHERE w.id != ? AND ${APPROVED}
-    ORDER BY rank DESC, w.views DESC LIMIT ?`).all(workId, workId, workId, workId, limit);
-  return attachCardGenres(rows);
+    ORDER BY rank DESC, w.views DESC LIMIT ?`).all(workId, workId, workId, workId, limit + 10);
+  return attachCardGenres(withoutVersions(workId, rows, limit));
 }
 
 /* --- По сюжету: TF-IDF по описаниям + теги группы «Сюжет» --- */
@@ -506,7 +513,8 @@ function similarByPlot(workId, limit = 12) {
      GROUP BY wt.work_id`).all(workId, workId)
     .forEach((r) => scores.set(r.work_id, (scores.get(r.work_id) || 0) + 0.12 * r.n));
 
-  const top = [...scores].filter(([, s]) => s > 0.04).sort((a, b) => b[1] - a[1]).slice(0, limit);
+  const skip = sameGroupIds(workId);
+  const top = [...scores].filter(([id, s]) => s > 0.04 && !skip.has(id)).sort((a, b) => b[1] - a[1]).slice(0, limit);
   if (!top.length) return [];
   const ids = top.map(([id]) => id);
   const rows = db.prepare(`SELECT ${CARD} FROM works w WHERE w.id IN (${placeholders(ids)}) AND ${APPROVED}`).all(...ids);

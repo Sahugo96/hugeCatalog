@@ -13,6 +13,7 @@ const C = require('./constants');
 const util = require('./util');
 const { cleanupTmp } = require('./upload');
 const { icon } = require('./icons');
+const { flag } = require('./flags');
 
 /** Строит URL с query-параметрами. Массивы разворачиваются в повторяющиеся ключи, пустые значения пропускаются. */
 function buildUrl(base, params = {}) {
@@ -56,6 +57,7 @@ function createApp() {
     util,
     labelOf: C.labelOf,
     icon,
+    flag: (lang, cls) => flag(lang, C.labelOf(C.LANGUAGES, lang), cls),
     buildUrl,
     catalogUrl,
     assetVersion: Date.now().toString(36),
@@ -80,7 +82,7 @@ function createApp() {
   }));
   app.get('/favicon.ico', (req, res) => res.redirect(301, '/static/img/favicon.svg'));
 
-  app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '5mb' }));
   app.use(express.json({ limit: '100kb' }));
 
   app.use(session({

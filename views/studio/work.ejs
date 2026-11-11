@@ -3,7 +3,7 @@
 <div class="container page-pad">
   <div class="breadcrumbs"><a href="/studio">Студия</a> / <span><%= w.title %></span></div>
   <div class="studio-work-head">
-    <img class="studio-cover" src="<%= w.cover %>" alt="">
+    <% if (w.cover) { %><img class="studio-cover" src="<%= w.cover %>" alt=""><% } %>
     <div class="grow">
       <h1><%= w.title %></h1>
       <p class="muted"><%= labelOf(C.TYPES, w.type) %><%= w.year ? ' · ' + w.year : '' %> · <%= labelOf(C.LANGUAGES, w.language) %> · <%= w.age_rating %><%= w.team_name ? ' · ' + w.team_name : '' %></p>
@@ -22,6 +22,46 @@
       </div>
     </div>
   </div>
+
+  <section class="section panel" id="versions">
+    <div class="section-head">
+      <h2><%- icon('layers') %>Языковые версии</h2>
+      <a class="btn btn-primary btn-sm" href="/studio/works/new?from=<%= w.id %>"><%- icon('plus') %>Добавить версию на другом языке</a>
+    </div>
+    <p class="muted small">Версии одного произведения на разных языках связаны между собой: на странице каждой показываются флаги со ссылками на остальные.</p>
+    <% if (versions.length) { %>
+      <ul class="version-list">
+        <% versions.forEach(function (v) { %>
+          <li>
+            <%- flag(v.language) %>
+            <a href="/title/<%= v.slug %>"><%= v.title %></a>
+            <span class="muted small hide-sm"><%= labelOf(C.LANGUAGES, v.language) %> · <%= v.chapters_count %> гл.</span>
+            <% if (v.moderation !== 'approved') { %><span class="status status-<%= v.moderation %>"><%= v.moderation === 'pending' ? 'на модерации' : 'отклонён' %></span><% } %>
+            <% if (v.id === w.id) { %>
+              <span class="badge badge-soft">эта версия</span>
+            <% } %>
+            <form method="post" action="/studio/works/<%= w.id %>/versions/<%= v.id %>/unlink" data-confirm="Отвязать «<%= v.title %>» от остальных версий?">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <button class="icon-btn small danger" title="Отвязать" aria-label="Отвязать"><%- icon('x') %></button>
+            </form>
+          </li>
+        <% }) %>
+      </ul>
+    <% } else { %>
+      <p>Пока это единственная версия — <%- flag(w.language) %> <%= labelOf(C.LANGUAGES, w.language) %>.</p>
+    <% } %>
+    <form method="post" action="/studio/works/<%= w.id %>/versions" class="link-form" data-link-form>
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input type="hidden" name="target_id" required>
+      <div class="field">
+        <span>Связать с уже существующим произведением</span>
+        <div class="link-search">
+          <input class="input" type="search" placeholder="Начните вводить название другой версии…" data-link-search autocomplete="off">
+          <div class="link-results" hidden></div>
+        </div>
+      </div>
+    </form>
+  </section>
 
   <section class="section" id="chapters">
     <div class="section-head"><h2><%- icon('list') %>Главы (<%= chapters.length %>)</h2></div>

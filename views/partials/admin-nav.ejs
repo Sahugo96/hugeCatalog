@@ -3,5 +3,6 @@
   <a href="/admin/works" class="<%= currentPath.startsWith('/admin/works') ? 'active' : '' %>"><%- icon('book') %>Тайтлы</a>
   <a href="/admin/teams" class="<%= currentPath.startsWith('/admin/teams') ? 'active' : '' %>"><%- icon('users') %>Команды</a>
   <a href="/admin/taxonomy" class="<%= currentPath.startsWith('/admin/taxonomy') ? 'active' : '' %>"><%- icon('layers') %>Жанры и теги</a>
+  <a href="/admin/import" class="<%= currentPath.startsWith('/admin/import') ? 'active' : '' %>"><%- icon('upload') %>Импорт</a>
   <% if (isAdmin) { %><a href="/admin/users" class="<%= currentPath.startsWith('/admin/users') ? 'active' : '' %>"><%- icon('user') %>Пользователи</a><% } %>
 </nav>

@@ -76,6 +76,8 @@ CREATE TABLE IF NOT EXISTS works (
   age_rating    TEXT NOT NULL DEFAULT '0+',
   team_id       INTEGER REFERENCES teams(id) ON DELETE SET NULL,
   uploader_id   INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  -- Языковые версии одного произведения имеют общий group_id (id одной из версий).
+  group_id      INTEGER,
   moderation    TEXT NOT NULL DEFAULT 'pending' CHECK (moderation IN ('pending', 'approved', 'rejected')),
   reject_reason TEXT,
   views         INTEGER NOT NULL DEFAULT 0,

@@ -67,6 +67,18 @@ function safeUnlink(p) {
   }
 }
 
+/** Копирует уже загруженное изображение (например, обложку другой версии). */
+function copyPublic(publicPath, subdir) {
+  if (!publicPath || !publicPath.startsWith('/uploads/')) return null;
+  const src = path.join(UPLOAD_DIR, publicPath.slice('/uploads/'.length));
+  if (!src.startsWith(UPLOAD_DIR) || !fs.existsSync(src)) return null;
+  const dir = path.join(UPLOAD_DIR, subdir);
+  fs.mkdirSync(dir, { recursive: true });
+  const name = `${crypto.randomBytes(8).toString('hex')}${path.extname(src)}`;
+  fs.copyFileSync(src, path.join(dir, name));
+  return `/uploads/${subdir}/${name}`;
+}
+
 /** Удаляет файл по публичному пути /uploads/... */
 function removePublic(publicPath) {
   if (!publicPath || !publicPath.startsWith('/uploads/')) return;
@@ -91,4 +103,4 @@ function cleanupTmp(req) {
 /** Естественная сортировка имён файлов: 2.jpg < 10.jpg */
 const naturalCompare = new Intl.Collator('en', { numeric: true, sensitivity: 'base' }).compare;
 
-module.exports = { coverUpload, pagesUpload, storeImage, removePublic, removeDir, cleanupTmp, naturalCompare, detectImageExt };
+module.exports = { coverUpload, pagesUpload, storeImage, copyPublic, removePublic, removeDir, cleanupTmp, naturalCompare, detectImageExt };

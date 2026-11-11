@@ -93,3 +93,39 @@ test('HTTP: основные страницы и доступ', async (t) => {
   assert.ok(page.includes('href="/catalog?lang=ko"'), 'язык — ссылка на каталог');
   assert.ok(page.includes('href="/catalog?age=12%2B"'), 'возраст — ссылка на каталог');
 });
+
+test('языковые версии: связь, запрет дублей языка, отвязка', () => {
+  const V = require('../src/services/versions');
+  const en = work('Alpha', { language: 'en', genres: ['Боевик', 'Фэнтези'], tags: ['Месть', 'Цветная'], description: 'Мастер меча возвращается ради мести предателю клана' });
+  const ko = work('알파', { language: 'ko', genres: ['Боевик'] });
+  V.linkWorks(a, en);
+  // «Альфа» создана с языком ko, поэтому корейскую версию к ней не добавить.
+  assert.deepStrictEqual(V.getVersions(a).map((v) => v.language).sort(), ['en', 'ko']);
+  assert.throws(() => V.linkWorks(en, ko), /уже есть/);
+  // Другие версии не попадают в «похожие».
+  assert.ok(!W.similarByPlot(a).some((w) => w.id === en));
+  assert.ok(!W.similarByTaxonomy(a).some((w) => w.id === en));
+  assert.ok(W.similarByTaxonomy(a).some((w) => w.id === ko), 'несвязанное произведение остаётся в похожих');
+  V.unlinkWork(en);
+  assert.strictEqual(V.getVersions(a).length, 0, 'группа из одной версии распускается');
+  V.linkWorks(a, en);
+});
+
+test('импорт из JSON: создание, связь по group, пропуск дублей', async () => {
+  const { importWorks } = require('../src/services/import');
+  const V = require('../src/services/versions');
+  const items = [
+    { title: 'Импорт RU', language: 'Русский', type: 'Манхва', status: 'ongoing', age_rating: '16+', year: 2021,
+      authors: ['Импортный Автор'], genres: ['Боевик', 'Несуществующий'], tags: ['Месть'], group: 'g1' },
+    { title: 'Import EN', language: 'en', type: 'manhwa', authors: ['Импортный Автор'], genres: ['Боевик'], group: 'g1' },
+    { title: 'Битый', language: 'xx', type: 'manga', authors: ['X'], genres: ['Боевик'] },
+  ];
+  const report = await importWorks(items, { skipCovers: true });
+  assert.deepStrictEqual(report.map((r) => r.status), ['created', 'created', 'error']);
+  assert.ok(report[0].messages.some((m) => m.includes('Несуществующий')));
+  const ru = q(`SELECT id, type, language FROM works WHERE title = 'Импорт RU'`).get();
+  assert.strictEqual(ru.type, 'manhwa');
+  assert.deepStrictEqual(V.getVersions(ru.id).map((v) => v.language).sort(), ['en', 'ru']);
+  const again = await importWorks(items.slice(0, 1), { skipCovers: true });
+  assert.strictEqual(again[0].status, 'skipped');
+});

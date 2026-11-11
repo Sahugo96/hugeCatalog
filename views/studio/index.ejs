@@ -34,7 +34,7 @@
             <tr>
               <td>
                 <a class="table-title" href="/studio/works/<%= w.id %>">
-                  <img src="<%= w.cover %>" alt="" loading="lazy"><span><strong><%= w.title %></strong><span class="muted small"><%= labelOf(C.TYPES, w.type) %><%= w.year ? ' · ' + w.year : '' %></span></span>
+                  <% if (w.cover) { %><img src="<%= w.cover %>" alt="" loading="lazy"><% } %><span><strong><%= w.title %></strong><span class="muted small"><%= labelOf(C.TYPES, w.type) %><%= w.year ? ' · ' + w.year : '' %></span></span>
                 </a>
               </td>
               <td class="hide-sm"><%= w.team_name || '—' %></td>

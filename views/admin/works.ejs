@@ -17,7 +17,7 @@
   <div class="mod-list">
     <% works.forEach(function (w) { %>
       <article class="mod-item">
-        <a href="/title/<%= w.slug %>" class="mod-cover"><img src="<%= w.cover %>" alt="" loading="lazy"></a>
+        <a href="/title/<%= w.slug %>" class="mod-cover"><% if (w.cover) { %><img src="<%= w.cover %>" alt="" loading="lazy"><% } %></a>
         <div class="grow">
           <h3><a href="/title/<%= w.slug %>"><%= w.title %></a></h3>
           <p class="muted small">

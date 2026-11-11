@@ -9,7 +9,7 @@
         <div class="container hero-inner">
           <a href="/title/<%= w.slug %>" class="hero-cover <%= w.age_rating === '18+' ? 'is-adult' : '' %>"><img src="<%= w.cover %>" alt="<%= w.title %>"></a>
           <div class="hero-text">
-            <div class="hero-kicker"><%- icon('fire', 'small') %>Популярное · <%= labelOf(C.TYPES, w.type) %><% if (w.year) { %> · <%= w.year %><% } %></div>
+            <div class="hero-kicker"><%- icon('fire', 'small') %>Популярное · <%- flag(w.language) %> <%= labelOf(C.TYPES, w.type) %><% if (w.year) { %> · <%= w.year %><% } %></div>
             <h2 class="hero-title"><a href="/title/<%= w.slug %>"><%= w.title %></a></h2>
             <p class="hero-desc"><%= w.description.length > 260 ? w.description.slice(0, 260) + '…' : w.description %></p>
             <div class="chips">
@@ -77,7 +77,7 @@
               <div class="update-body">
                 <div class="update-top">
                   <a href="/title/<%= w.slug %>" class="update-title"><%= w.title %></a>
-                  <span class="badge badge-soft"><%= labelOf(C.TYPES, w.type) %></span>
+                  <span class="update-badges"><%- flag(w.language) %><span class="badge badge-soft"><%= labelOf(C.TYPES, w.type) %></span></span>
                 </div>
                 <ul class="update-chapters">
                   <% w.recentChapters.forEach(function (c) { %>
@@ -110,7 +110,7 @@
                 <img src="<%= w.cover %>" alt="" loading="lazy" class="<%= w.age_rating === '18+' ? 'is-adult-img' : '' %>">
                 <span class="rank-info">
                   <strong><%= w.title %></strong>
-                  <span class="muted"><%= labelOf(C.TYPES, w.type) %> · <%- icon('eye', 'tiny') %><%= util.compactNumber(w.views) %> · <%- icon('heart', 'tiny') %><%= util.compactNumber(w.likes_count) %></span>
+                  <span class="muted"><%- flag(w.language, 'flag-sm') %> <%= labelOf(C.TYPES, w.type) %> · <%- icon('eye', 'tiny') %><%= util.compactNumber(w.views) %> · <%- icon('heart', 'tiny') %><%= util.compactNumber(w.likes_count) %></span>
                 </span>
               </a>
             </li>

@@ -11,6 +11,7 @@
     <% } %>
     <span class="badge badge-type"><%= labelOf(C.TYPES, w.type) %></span>
     <% if (adult) { %><span class="badge badge-adult">18+</span><% } %>
+    <% if (w.language) { %><span class="card-flag"><%- flag(w.language) %></span><% } %>
     <% if (typeof rank !== 'undefined' && rank) { %><span class="card-rank"><%= rank %></span><% } %>
   </div>
   <div class="card-body">

@@ -381,6 +381,36 @@
     }, 200));
   });
 
+  /* Связывание языковых версий в студии */
+  var linkSearch = $('[data-link-search]');
+  if (linkSearch) {
+    var linkForm = linkSearch.closest('form');
+    var results = linkForm.querySelector('.link-results');
+    linkSearch.addEventListener('input', debounce(function () {
+      var q = linkSearch.value.trim();
+      if (q.length < 2) { results.hidden = true; return; }
+      fetch('/studio/api/works?q=' + encodeURIComponent(q), { headers: { Accept: 'application/json' } })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          results.innerHTML = (d.items || []).map(function (w) {
+            return '<button type="button" data-id="' + w.id + '" data-title="' + escapeHtml(w.title) + '">' +
+              (w.cover ? '<img src="' + escapeHtml(w.cover) + '" alt="">' : '') +
+              '<span><strong>' + escapeHtml(w.title) + '</strong><small>' + escapeHtml(w.language_label) + (w.year ? ' · ' + w.year : '') +
+              (w.moderation !== 'approved' ? ' · на модерации' : '') + '</small></span></button>';
+          }).join('') || '<div class="search-empty">Ничего не найдено</div>';
+          results.hidden = false;
+        });
+    }, 200));
+    linkSearch.addEventListener('keydown', function (e) { if (e.key === 'Enter') e.preventDefault(); });
+    results.addEventListener('click', function (e) {
+      var b = e.target.closest('button[data-id]');
+      if (!b) return;
+      if (!window.confirm('Связать с «' + b.getAttribute('data-title') + '» как языковые версии одного произведения?')) return;
+      linkForm.querySelector('[name="target_id"]').value = b.getAttribute('data-id');
+      linkForm.submit();
+    });
+  }
+
   var pagesInput = $('[data-pages-input]');
   if (pagesInput) {
     var preview = $('[data-pages-preview]');

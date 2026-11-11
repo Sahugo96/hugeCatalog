@@ -8,9 +8,11 @@
     "node": ">=22.13"
   },
   "scripts": {
-    "start": "node --disable-warning=ExperimentalWarning server.js",
-    "dev": "node --disable-warning=ExperimentalWarning --watch server.js",
-    "seed:demo": "node --disable-warning=ExperimentalWarning scripts/seed-demo.js",
+    "start": "node --disable-warning=ExperimentalWarning --env-file-if-exists=.env server.js",
+    "dev": "node --disable-warning=ExperimentalWarning --env-file-if-exists=.env --watch server.js",
+    "seed:demo": "node --disable-warning=ExperimentalWarning --env-file-if-exists=.env scripts/seed-demo.js",
+    "import": "node --disable-warning=ExperimentalWarning --env-file-if-exists=.env scripts/import.js",
+    "admin:password": "node --disable-warning=ExperimentalWarning --env-file-if-exists=.env scripts/admin-password.js",
     "test": "node --disable-warning=ExperimentalWarning --test test/*.test.js"
   },
   "license": "MIT",

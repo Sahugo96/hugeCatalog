@@ -13,6 +13,7 @@ const { q, transaction, UPLOAD_DIR } = require('../src/db');
 const { ensureBootstrap } = require('../src/bootstrap');
 const { hashPassword } = require('../src/auth');
 const W = require('../src/services/works');
+const V = require('../src/services/versions');
 const { today } = require('../src/util');
 
 ensureBootstrap();
@@ -122,6 +123,16 @@ const DEMO = [
     desc: 'Шеф-повар современного ресторана просыпается в теле младшего помощника на императорской кухне. Своими блюдами он покоряет придворных, но при дворе вкусная еда может быть опаснее яда.' },
 ];
 
+// Другие языковые версии демо-тайтлов (связываются с основной русской версией).
+const VERSIONS = [
+  { of: 'Клинок северного ветра', title: '북풍의 검', lang: 'ko', chapters: 14 },
+  { of: 'Клинок северного ветра', title: 'Blade of the North Wind', lang: 'en', chapters: 9 },
+  { of: 'Башня тысячи этажей', title: 'Tower of a Thousand Floors', lang: 'en', chapters: 12 },
+  { of: 'Чайный домик у подножия гор', title: '山麓の茶屋', lang: 'ja', chapters: 6 },
+  { of: 'Злодейка хочет спокойной жизни', title: 'The Villainess Wants a Quiet Life', lang: 'en', chapters: 5 },
+  { of: 'Злодейка хочет спокойной жизни', title: 'La villana quiere una vida tranquila', lang: 'es', chapters: 3 },
+];
+
 function ensureUser(username, role = 'user') {
   let u = q('SELECT id FROM users WHERE username = ?').get(username);
   if (!u) {
@@ -135,6 +146,56 @@ function ensureUser(username, role = 'user') {
 function sqlTime(daysAgo, hoursAgo = 0) {
   const d = new Date(Date.now() - daysAgo * 86400000 - hoursAgo * 3600000);
   return d.toISOString().replace('T', ' ').slice(0, 19);
+}
+
+function createDemoWork(d, idx, team, ownerId, readers, genreId, tagId) {
+  const palette = PALETTES[idx % PALETTES.length];
+  const coverName = `demo-${idx + 1}.svg`;
+  fs.writeFileSync(path.join(UPLOAD_DIR, 'covers', coverName), coverSvg(d.title, d.type, palette, idx + 3));
+
+  transaction(() => {
+    const workId = W.saveWork({
+      title: d.title, alt_titles: '', description: d.desc, type: d.type, status: d.status, language: d.version || 'ru',
+      age_rating: d.age, year: d.year, story_authors: d.authors, artists: d.artists,
+      genres: d.genres.map((g) => genreId.get(g)).filter(Boolean),
+      tags: d.tags.map((t) => tagId.get(t)).filter(Boolean),
+    }, { teamId: team.id, uploaderId: ownerId, moderation: 'approved', cover: `/uploads/covers/${coverName}` });
+
+    const publishedDaysAgo = Math.max(2, 40 - idx * 2);
+    q('UPDATE works SET published_at = ?, created_at = ? WHERE id = ?').run(sqlTime(publishedDaysAgo), sqlTime(publishedDaysAgo), workId);
+
+    const chapterCount = d.chapterCount || 3 + ((idx * 7) % 10);
+    for (let c = 1; c <= chapterCount; c++) {
+      const daysAgo = Math.max(0, publishedDaysAgo - c * 3);
+      const r = q('INSERT INTO chapters (work_id, volume, number, title, team_id, uploader_id, created_at, views) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+        .run(workId, Math.ceil(c / 5), c, c === 1 ? 'Начало' : '', team.id, ownerId, sqlTime(daysAgo, idx + c), 20 + ((idx * 31 + c * 17) % 400));
+      const chId = Number(r.lastInsertRowid);
+      const dir = path.join(UPLOAD_DIR, 'chapters', String(chId));
+      fs.mkdirSync(dir, { recursive: true });
+      const n = 4 + ((idx + c) % 3);
+      for (let p = 1; p <= n; p++) {
+        const name = `${String(p).padStart(4, '0')}.svg`;
+        fs.writeFileSync(path.join(dir, name), pageSvg(d.title, c, p, n, palette));
+        q('INSERT INTO pages (chapter_id, idx, path) VALUES (?, ?, ?)').run(chId, p, `/uploads/chapters/${chId}/${name}`);
+      }
+      q('UPDATE chapters SET pages_count = ? WHERE id = ?').run(n, chId);
+    }
+    W.refreshLastChapter(workId);
+
+    // Просмотры и лайки.
+    const views = 500 + ((idx * 977) % 9000);
+    q('UPDATE works SET views = ? WHERE id = ?').run(views, workId);
+    for (let day = 0; day < 7; day++) {
+      const v = (idx * 13 + day * 7) % 60;
+      if (v) q('INSERT OR REPLACE INTO daily_views (work_id, day, views, reads) VALUES (?, ?, ?, ?)').run(workId, today(-day), v, Math.round(v * 1.6));
+    }
+    readers.forEach((uid, i) => {
+      if ((idx + i) % 3 === 0) q('INSERT OR IGNORE INTO likes (user_id, work_id, created_at) VALUES (?, ?, ?)').run(uid, workId, sqlTime((idx + i) % 5));
+      if ((idx + i) % 4 === 0) q('INSERT OR IGNORE INTO favorites (user_id, work_id) VALUES (?, ?)').run(uid, workId);
+    });
+    q('UPDATE works SET likes_count = (SELECT COUNT(*) FROM likes WHERE work_id = ?), favs_count = (SELECT COUNT(*) FROM favorites WHERE work_id = ?) WHERE id = ?')
+      .run(workId, workId, workId);
+  });
 }
 
 function run() {
@@ -153,55 +214,21 @@ function run() {
   fs.mkdirSync(path.join(UPLOAD_DIR, 'covers'), { recursive: true });
 
   let created = 0;
-  DEMO.forEach((d, idx) => {
+  DEMO.slice().forEach((d, idx) => {
     if (q('SELECT 1 FROM works WHERE title = ?').get(d.title)) return;
-    const palette = PALETTES[idx % PALETTES.length];
-    const coverName = `demo-${idx + 1}.svg`;
-    fs.writeFileSync(path.join(UPLOAD_DIR, 'covers', coverName), coverSvg(d.title, d.type, palette, idx + 3));
+    createDemoWork(d, idx, team, ownerId, readers, genreId, tagId);
+    created++;
+  });
 
-    transaction(() => {
-      const workId = W.saveWork({
-        title: d.title, alt_titles: '', description: d.desc, type: d.type, status: d.status, language: d.lang,
-        age_rating: d.age, year: d.year, story_authors: d.authors, artists: d.artists,
-        genres: d.genres.map((g) => genreId.get(g)).filter(Boolean),
-        tags: d.tags.map((t) => tagId.get(t)).filter(Boolean),
-      }, { teamId: team.id, uploaderId: ownerId, moderation: 'approved', cover: `/uploads/covers/${coverName}` });
-
-      const publishedDaysAgo = 40 - idx * 2;
-      q('UPDATE works SET published_at = ?, created_at = ? WHERE id = ?').run(sqlTime(publishedDaysAgo), sqlTime(publishedDaysAgo), workId);
-
-      const chapterCount = 3 + ((idx * 7) % 10);
-      for (let c = 1; c <= chapterCount; c++) {
-        const daysAgo = Math.max(0, publishedDaysAgo - c * 3);
-        const r = q('INSERT INTO chapters (work_id, volume, number, title, team_id, uploader_id, created_at, views) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
-          .run(workId, Math.ceil(c / 5), c, c === 1 ? 'Начало' : '', team.id, ownerId, sqlTime(daysAgo, idx + c), 20 + ((idx * 31 + c * 17) % 400));
-        const chId = Number(r.lastInsertRowid);
-        const dir = path.join(UPLOAD_DIR, 'chapters', String(chId));
-        fs.mkdirSync(dir, { recursive: true });
-        const n = 4 + ((idx + c) % 3);
-        for (let p = 1; p <= n; p++) {
-          const name = `${String(p).padStart(4, '0')}.svg`;
-          fs.writeFileSync(path.join(dir, name), pageSvg(d.title, c, p, n, palette));
-          q('INSERT INTO pages (chapter_id, idx, path) VALUES (?, ?, ?)').run(chId, p, `/uploads/chapters/${chId}/${name}`);
-        }
-        q('UPDATE chapters SET pages_count = ? WHERE id = ?').run(n, chId);
-      }
-      W.refreshLastChapter(workId);
-
-      // Просмотры и лайки.
-      const views = 500 + ((idx * 977) % 9000);
-      q('UPDATE works SET views = ? WHERE id = ?').run(views, workId);
-      for (let day = 0; day < 7; day++) {
-        const v = (idx * 13 + day * 7) % 60;
-        if (v) q('INSERT OR REPLACE INTO daily_views (work_id, day, views, reads) VALUES (?, ?, ?, ?)').run(workId, today(-day), v, Math.round(v * 1.6));
-      }
-      readers.forEach((uid, i) => {
-        if ((idx + i) % 3 === 0) q('INSERT OR IGNORE INTO likes (user_id, work_id, created_at) VALUES (?, ?, ?)').run(uid, workId, sqlTime((idx + i) % 5));
-        if ((idx + i) % 4 === 0) q('INSERT OR IGNORE INTO favorites (user_id, work_id) VALUES (?, ?)').run(uid, workId);
-      });
-      q('UPDATE works SET likes_count = (SELECT COUNT(*) FROM likes WHERE work_id = ?), favs_count = (SELECT COUNT(*) FROM favorites WHERE work_id = ?) WHERE id = ?')
-        .run(workId, workId, workId);
-    });
+  VERSIONS.forEach((v) => {
+    const base = q('SELECT id FROM works WHERE title = ?').get(v.of);
+    if (!base || q('SELECT 1 FROM works WHERE title = ?').get(v.title)) return;
+    const d = DEMO.find((x) => x.title === v.of);
+    const idx = DEMO.length;
+    DEMO.push({ ...d, title: v.title, version: v.lang, chapterCount: v.chapters });
+    createDemoWork(DEMO[idx], idx, team, ownerId, readers, genreId, tagId);
+    const id = q('SELECT id FROM works WHERE title = ?').get(v.title).id;
+    V.linkWorks(base.id, id);
     created++;
   });
 

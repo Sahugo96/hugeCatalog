@@ -3,9 +3,11 @@
 const express = require('express');
 const { q, transaction } = require('../db');
 const W = require('../services/works');
+const V = require('../services/versions');
+const C = require('../constants');
 const { requireAuth, verifyCsrf, isStaff, canEditWork, teamRole } = require('../auth');
-const { coverUpload, pagesUpload, storeImage, removePublic, removeDir, cleanupTmp, naturalCompare, detectImageExt } = require('../upload');
-const { toInt } = require('../util');
+const { coverUpload, pagesUpload, storeImage, copyPublic, removePublic, removeDir, cleanupTmp, naturalCompare, detectImageExt } = require('../upload');
+const { toInt, searchNormalize, escapeLike } = require('../util');
 
 const router = express.Router();
 router.use(requireAuth);
@@ -68,12 +70,35 @@ router.get('/works/new', (req, res) => {
     return res.redirect('/teams/new');
   }
   const opts = formOptions(req);
-  res.render('studio/work-form', {
-    title: 'Новое произведение', work: null, errors: [],
-    form: { team_id: req.query.team || (opts.teams[0] && opts.teams[0].id), genres: [], tags: [], language: 'ja', type: 'manga', status: 'ongoing', age_rating: '12+' },
-    ...opts,
-  });
+  const source = sourceWork(req, req.query.from);
+  let form = { team_id: req.query.team || (opts.teams[0] && opts.teams[0].id), genres: [], tags: [], language: 'ja', type: 'manga', status: 'ongoing', age_rating: '12+' };
+  if (source) form = { ...form, ...versionPrefill(source) };
+  res.render('studio/work-form', { title: source ? `Новая версия: ${source.title}` : 'Новое произведение', work: null, errors: [], form, source, ...opts });
 });
+
+/** Исходное произведение для «добавить версию на другом языке»: опубликованное или своё. */
+function sourceWork(req, id) {
+  const work = id ? W.getWorkById(toInt(id)) : null;
+  if (!work || (work.moderation !== 'approved' && !canEditWork(req.user, work))) return null;
+  return work;
+}
+
+/** Копирует общие данные: авторов, жанры, теги, тип, год… Название и язык — новые. */
+function versionPrefill(source) {
+  const taken = new Set([source.language, ...V.getVersions(source.id, { onlyApproved: false }).map((v) => v.language)]);
+  const language = C.values(C.LANGUAGES).find((l) => !taken.has(l) && l !== 'other') || 'other';
+  return {
+    title: '',
+    alt_titles: [source.title, source.alt_titles].filter(Boolean).join('\n'),
+    description: source.description,
+    type: source.type, status: source.status, year: source.year, age_rating: source.age_rating, language,
+    story_authors: source.storyAuthors.map((a) => a.name).join(', '),
+    artists: source.artists.map((a) => a.name).join(', '),
+    genres: source.genres.map((g) => g.id),
+    tags: source.tags.map((t) => t.id),
+    link_to: source.id,
+  };
+}
 
 function resolveTeam(req, rawTeamId, errors) {
   const teamId = toInt(rawTeamId);
@@ -94,15 +119,27 @@ router.post('/works/new', coverUpload.single('cover'), verifyCsrf, (req, res) =>
   }
   const { data, errors } = W.validateWorkInput(req.body);
   const teamId = resolveTeam(req, req.body.team_id, errors);
-  if (!req.file) errors.push('Загрузите обложку.');
-  else errors.push(...invalidImages([req.file]));
+  const source = sourceWork(req, req.body.link_to);
+  if (source && V.getVersions(source.id, { onlyApproved: false }).concat([source]).some((v) => v.language === data.language)) {
+    errors.push(`Версия на языке «${C.labelOf(C.LANGUAGES, data.language)}» уже есть. Выберите другой язык.`);
+  }
+  const reuseCover = !req.file && source && req.body.reuse_cover && source.cover;
+  if (!req.file && !reuseCover) errors.push('Загрузите обложку.');
+  else if (req.file) errors.push(...invalidImages([req.file]));
   if (errors.length) {
     cleanupTmp(req);
-    return res.status(400).render('studio/work-form', { title: 'Новое произведение', work: null, errors, form: { ...req.body, ...data, team_id: teamId }, ...formOptions(req) });
+    return res.status(400).render('studio/work-form', { title: 'Новое произведение', work: null, errors, source, form: { ...req.body, ...data, team_id: teamId }, ...formOptions(req) });
   }
-  const cover = storeImage(req.file, 'covers', null);
+  const cover = req.file ? storeImage(req.file, 'covers', null) : copyPublic(source.cover, 'covers');
   const moderation = isStaff(req.user) ? 'approved' : 'pending';
   const id = W.saveWork(data, { teamId, uploaderId: req.user.id, moderation, cover });
+  if (source) {
+    try {
+      V.linkWorks(source.id, id);
+    } catch (err) {
+      req.flash('error', `Произведение создано, но не связано: ${err.message}`);
+    }
+  }
   req.flash('success', moderation === 'approved'
     ? 'Произведение опубликовано. Теперь добавьте главы.'
     : 'Произведение отправлено на модерацию. Пока оно на проверке, вы уже можете загружать главы.');
@@ -113,7 +150,52 @@ router.post('/works/new', coverUpload.single('cover'), verifyCsrf, (req, res) =>
 
 router.get('/works/:id', loadEditableWork, (req, res) => {
   const work = req.work;
-  res.render('studio/work', { title: work.title, work, chapters: W.getChapters(work.id, 'DESC') });
+  res.render('studio/work', {
+    title: work.title, work, chapters: W.getChapters(work.id, 'DESC'),
+    versions: V.getVersions(work.id, { onlyApproved: false }),
+  });
+});
+
+/* ---------- Языковые версии ---------- */
+
+// Поиск произведений для связывания: опубликованные + свои.
+router.get('/api/works', (req, res) => {
+  const text = searchNormalize(req.query.q).slice(0, 100);
+  if (text.length < 2) return res.json({ items: [] });
+  const items = q(`SELECT w.id, w.slug, w.title, w.cover, w.language, w.type, w.year, w.moderation, w.team_id
+    FROM works w WHERE w.search_text LIKE ? ESCAPE '\\' ORDER BY w.views DESC LIMIT 30`).all(`%${escapeLike(text)}%`)
+    .filter((w) => w.moderation === 'approved' || canEditWork(req.user, w))
+    .slice(0, 10)
+    .map(({ team_id, ...w }) => ({ ...w, language_label: C.labelOf(C.LANGUAGES, w.language) }));
+  res.json({ items });
+});
+
+router.post('/works/:id/versions', loadEditableWork, (req, res) => {
+  const work = req.work;
+  const target = q('SELECT id, moderation, team_id FROM works WHERE id = ?').get(toInt(req.body.target_id));
+  if (!target || (target.moderation !== 'approved' && !canEditWork(req.user, target))) {
+    req.flash('error', 'Выберите произведение из списка.');
+  } else {
+    try {
+      V.linkWorks(work.id, target.id);
+      req.flash('success', 'Версии связаны.');
+    } catch (err) {
+      if (!err.expose) throw err;
+      req.flash('error', err.message);
+    }
+  }
+  res.redirect(`/studio/works/${work.id}#versions`);
+});
+
+router.post('/works/:id/versions/:vid/unlink', loadEditableWork, (req, res) => {
+  const work = req.work;
+  const vid = toInt(req.params.vid);
+  const sameGroup = V.getVersions(work.id, { onlyApproved: false }).some((v) => v.id === vid);
+  if (sameGroup) {
+    V.unlinkWork(vid);
+    req.flash('success', 'Версия отвязана.');
+  }
+  res.redirect(`/studio/works/${work.id}#versions`);
 });
 
 router.get('/works/:id/edit', loadEditableWork, (req, res) => {
@@ -136,6 +218,9 @@ router.post('/works/:id/edit', coverUpload.single('cover'), verifyCsrf, loadEdit
     teamId = resolveTeam(req, req.body.team_id, errors);
   }
   if (req.file) errors.push(...invalidImages([req.file]));
+  if (V.getVersions(work.id, { onlyApproved: false }).some((v) => v.id !== work.id && v.language === data.language)) {
+    errors.push(`У этого произведения уже есть связанная версия на языке «${C.labelOf(C.LANGUAGES, data.language)}».`);
+  }
   if (errors.length) {
     cleanupTmp(req);
     return res.status(400).render('studio/work-form', { title: `Редактирование: ${work.title}`, work, errors, form: { ...req.body, ...data, team_id: teamId }, ...formOptions(req) });
@@ -163,6 +248,7 @@ router.post('/works/:id/delete', loadEditableWork, (req, res) => {
   }
   const chapterIds = q('SELECT id FROM chapters WHERE work_id = ?').all(work.id).map((c) => c.id);
   q('DELETE FROM works WHERE id = ?').run(work.id);
+  V.cleanupGroup(work.group_id);
   chapterIds.forEach((id) => removeDir(`chapters/${id}`));
   removePublic(work.cover);
   W.bumpTextIndex();

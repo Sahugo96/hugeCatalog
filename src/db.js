@@ -14,6 +14,13 @@ const db = new DatabaseSync(DB_PATH);
 db.exec('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;');
 db.exec(fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8'));
 
+/* ---------- Миграции для баз, созданных старой версией ---------- */
+function hasColumn(table, column) {
+  return db.prepare(`PRAGMA table_info(${table})`).all().some((c) => c.name === column);
+}
+if (!hasColumn('works', 'group_id')) db.exec('ALTER TABLE works ADD COLUMN group_id INTEGER');
+db.exec('CREATE INDEX IF NOT EXISTS idx_works_group ON works(group_id)');
+
 /** Выполнить функцию в транзакции. Поддерживает вложенные вызовы. */
 let depth = 0;
 function transaction(fn) {

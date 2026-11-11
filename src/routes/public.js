@@ -3,6 +3,7 @@
 const express = require('express');
 const { q, db } = require('../db');
 const W = require('../services/works');
+const { getVersions } = require('../services/versions');
 const { requireAuth, canEditWork } = require('../auth');
 const { today, searchNormalize, escapeLike, toInt } = require('../util');
 
@@ -126,7 +127,9 @@ router.get('/title/:slug', (req, res, next) => {
          WHERE rh.user_id = ? AND rh.work_id = ?`).get(req.user.id, work.id)
     : null;
 
+  const versions = getVersions(work.id, { onlyApproved: !canEditWork(req.user, work) });
   res.render('title', {
+    versions,
     title: work.title,
     description: work.description.slice(0, 200),
     ogImage: work.cover,

@@ -73,6 +73,20 @@
         </div>
         <h1 class="title-name"><%= w.title %></h1>
         <% if (w.alt_titles) { %><div class="title-alt muted"><%= w.alt_titles.split('\n').join(' / ') %></div><% } %>
+        <nav class="lang-switch" aria-label="Языковые версии">
+          <% if (versions.length > 1) { %>
+            <% versions.forEach(function (v) { var label = labelOf(C.LANGUAGES, v.language); %>
+              <% if (v.id === w.id) { %>
+                <span class="lang-pill current" aria-current="page" title="<%= label %> — эта версия"><%- flag(v.language) %><span><%= v.language.toUpperCase() %></span></span>
+              <% } else { %>
+                <a class="lang-pill <%= v.moderation !== 'approved' ? 'is-pending' : '' %>" href="/title/<%= v.slug %>" hreflang="<%= v.language %>" title="<%= label %>: «<%= v.title %>» · <%= v.chapters_count %> гл.<%= v.moderation !== 'approved' ? ' (на модерации)' : '' %>"><%- flag(v.language) %><span><%= v.language.toUpperCase() %></span></a>
+              <% } %>
+            <% }) %>
+          <% } else { %>
+            <span class="lang-pill current" title="<%= labelOf(C.LANGUAGES, w.language) %>"><%- flag(w.language) %><span><%= labelOf(C.LANGUAGES, w.language) %></span></span>
+            <% if (canEdit) { %><a class="lang-add" href="/studio/works/<%= w.id %>#versions"><%- icon('plus', 'small') %>Связать с другим языком</a><% } %>
+          <% } %>
+        </nav>
       </div>
 
       <div class="title-stats">
@@ -92,7 +106,7 @@
         <dt>Тип</dt><dd><a href="<%= catalogUrl('type', w.type) %>"><%= labelOf(C.TYPES, w.type) %></a></dd>
         <dt>Год начала</dt><dd><% if (w.year) { %><a href="<%= buildUrl('/catalog', { year_from: w.year, year_to: w.year }) %>"><%= w.year %></a><% } else { %>—<% } %></dd>
         <dt>Статус</dt><dd><a href="<%= catalogUrl('status', w.status) %>"><%= labelOf(C.STATUSES, w.status) %></a></dd>
-        <dt>Язык оригинала</dt><dd><a href="<%= catalogUrl('lang', w.language) %>"><%= labelOf(C.LANGUAGES, w.language) %></a></dd>
+        <dt>Язык</dt><dd><a href="<%= catalogUrl('lang', w.language) %>" class="with-flag"><%- flag(w.language) %><%= labelOf(C.LANGUAGES, w.language) %></a></dd>
         <dt>Возраст</dt><dd><a href="<%= catalogUrl('age', w.age_rating) %>" class="age-badge age-<%= w.age_rating.replace('+', '') %>"><%= w.age_rating %></a></dd>
         <% if (w.team_name) { %>
           <dt>Перевод</dt><dd><a href="/team/<%= w.team_slug %>"><%- icon('users', 'tiny') %><%= w.team_name %></a></dd>

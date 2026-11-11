@@ -9,12 +9,16 @@
   <% if (!work && !isStaff) { %>
     <div class="notice notice-info"><%- icon('info') %><div>После сохранения тайтл уйдёт на модерацию. Пока он на проверке, вы можете загружать главы — они станут видны читателям вместе с одобрением.</div></div>
   <% } %>
+  <% if (typeof source !== 'undefined' && source) { %>
+    <div class="notice notice-info"><%- flag(source.language) %><div>Новая языковая версия произведения <a href="/title/<%= source.slug %>" target="_blank">«<%= source.title %>»</a>. Авторы, жанры, теги и описание скопированы — переведите название и описание. После сохранения версии будут связаны автоматически.</div></div>
+  <% } %>
   <% if (errors.length) { %>
     <div class="notice notice-error"><%- icon('info') %><ul><% errors.forEach(function (e) { %><li><%= e %></li><% }) %></ul></div>
   <% } %>
 
   <form method="post" enctype="multipart/form-data" action="<%= work ? '/studio/works/' + work.id + '/edit' : '/studio/works/new' %>" class="form" data-unsaved-warning>
     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <% if (!work && form.link_to) { %><input type="hidden" name="link_to" value="<%= form.link_to %>"><% } %>
 
     <div class="panel">
       <h2 class="h3">Основное</h2>
@@ -22,13 +26,19 @@
         <label class="cover-drop">
           <img data-cover-preview <% if (work && work.cover) { %>src="<%= work.cover %>"<% } else { %>hidden<% } %> alt="">
           <span class="cover-drop-hint" <%= work && work.cover ? 'hidden' : '' %>><%- icon('upload') %>Обложка<br><small>jpg, png, webp · до 8 МБ</small></span>
-          <input type="file" name="cover" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" <%= work ? '' : 'required' %> data-image-preview>
+          <input type="file" name="cover" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" <%= work || (typeof source !== 'undefined' && source) ? '' : 'required' %> data-image-preview>
         </label>
         <div class="grow">
           <label class="field">
-            <span>Название *</span>
+            <span>Название<%= typeof source !== 'undefined' && source ? ' на языке этой версии' : '' %> *</span>
             <input class="input" name="title" value="<%= form.title || '' %>" required maxlength="200">
           </label>
+          <% if (typeof source !== 'undefined' && source && source.cover) { %>
+            <label class="check" style="margin-bottom: 12px">
+              <input type="checkbox" name="reuse_cover" value="1" <%= form.reuse_cover !== undefined || !errors.length ? 'checked' : '' %>>
+              <span>Если не загружу свою — взять обложку версии «<%= source.title %>»</span>
+            </label>
+          <% } %>
           <label class="field">
             <span>Альтернативные названия</span>
             <textarea class="input" name="alt_titles" rows="3" maxlength="1000" placeholder="По одному на строку: оригинальное, английское…"><%= form.alt_titles || '' %></textarea>
@@ -76,7 +86,7 @@
           </select>
         </label>
         <label class="field">
-          <span>Язык оригинала *</span>
+          <span>Язык этой версии *</span>
           <select class="input select" name="language" required>
             <% C.LANGUAGES.forEach(function (l) { %><option value="<%= l.value %>" <%= form.language === l.value ? 'selected' : '' %>><%= l.label %></option><% }) %>
           </select>
