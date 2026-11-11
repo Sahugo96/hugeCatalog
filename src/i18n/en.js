@@ -207,6 +207,16 @@ const EN = {
   'Экранизировано': 'Adapted to anime',
   'Ваншот': 'Oneshot',
   'Сборник': 'Anthology',
+  'Милфы': 'MILF',
+  'Большая грудь': 'Big breasts',
+  'Огромная грудь': 'Huge breasts',
+  'Проституция': 'Prostitution',
+  'Медицинская маска': 'Mouth mask',
+  'Шантаж': 'Blackmail',
+  'Измена': 'Cheating',
+  'Съёмка': 'Filming',
+  'Старик': 'Old man',
+  'Цензура мозаикой': 'Mosaic censorship',
 
   /* ---------- Главная ---------- */
   'Популярное ·': 'Popular ·',
