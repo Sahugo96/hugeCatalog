@@ -173,6 +173,12 @@
     });
   });
 
+  /* ---------- Админка: только жанры и теги без перевода ---------- */
+  var onlyMissing = $('[data-only-missing]');
+  if (onlyMissing) {
+    onlyMissing.addEventListener('change', function () { document.body.classList.toggle('only-missing', onlyMissing.checked); });
+  }
+
   /* ---------- Быстрый поиск в шапке ---------- */
   var qs = $('[data-quick-search]');
   if (qs) {

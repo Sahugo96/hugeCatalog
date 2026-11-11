@@ -69,6 +69,7 @@ function ensureAdmin() {
 
 function ensureBootstrap() {
   ensureTaxonomy();
+  require('./services/taxonomy-i18n').init();
   return ensureAdmin();
 }
 

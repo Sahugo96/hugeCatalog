@@ -42,9 +42,27 @@ function interpolate(str, vars) {
 
 const cache = new Map();
 
+/**
+ * Переводы из базы (английские названия жанров и тегов из админки).
+ * Имеют приоритет над словарём и обновляются без перезапуска сервера.
+ */
+let overrides = new Map();
+function setOverrides(map) {
+  overrides = map;
+  cache.clear();
+}
+
+/** Точный перевод: база → словарь → undefined. */
+function lookup(str) {
+  if (overrides.has(str)) return overrides.get(str);
+  if (Object.prototype.hasOwnProperty.call(EN, str)) return EN[str];
+  return undefined;
+}
+
 /** Перевод строки на английский (без подстановки vars). */
 function toEnglish(str) {
-  if (Object.prototype.hasOwnProperty.call(EN, str)) return EN[str];
+  const exact = lookup(str);
+  if (exact !== undefined) return exact;
   if (cache.has(str)) return cache.get(str);
   let result = str;
   for (const p of PATTERNS) {
@@ -53,7 +71,8 @@ function toEnglish(str) {
     const values = {};
     p.names.forEach((name, i) => {
       const v = m[i + 1];
-      values[name] = Object.prototype.hasOwnProperty.call(EN, v) ? EN[v] : v;
+      const t = lookup(v);
+      values[name] = t !== undefined ? t : v;
     });
     result = interpolate(p.en, values);
     break;
@@ -69,11 +88,12 @@ function translate(lang, str, vars) {
   if (lang !== 'en') return interpolate(str, vars);
   if (vars) {
     // Сначала переводим шаблон целиком, потом подставляем значения (тоже переведённые, если есть перевод).
-    const tpl = Object.prototype.hasOwnProperty.call(EN, str) ? EN[str] : str;
+    const tpl = lookup(str) !== undefined ? lookup(str) : str;
     const translatedVars = {};
     Object.keys(vars).forEach((k) => {
       const v = vars[k];
-      translatedVars[k] = typeof v === 'string' && Object.prototype.hasOwnProperty.call(EN, v) ? EN[v] : v;
+      const t = typeof v === 'string' ? lookup(v) : undefined;
+      translatedVars[k] = t !== undefined ? t : v;
     });
     return interpolate(tpl, translatedVars);
   }
@@ -135,4 +155,4 @@ function middleware(req, res, next) {
   next();
 }
 
-module.exports = { LANGS, DEFAULT_LANG, translate, plural, detect, middleware, parseCookies };
+module.exports = { LANGS, DEFAULT_LANG, translate, plural, detect, middleware, parseCookies, setOverrides, dictionaryEN: EN };

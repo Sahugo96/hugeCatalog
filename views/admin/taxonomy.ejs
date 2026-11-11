@@ -3,19 +3,33 @@
   <h1><%= __('Жанры, теги и авторы') %></h1>
   <%- include('../partials/admin-nav') %>
 
+  <%
+    var allTags = []; tagGroups.forEach(function (g) { allTags = allTags.concat(g.tags); });
+    var missingGenres = genres.filter(function (g) { return !g.name_en; }).length;
+    var missingTags = allTags.filter(function (t) { return !t.name_en; }).length;
+  %>
+  <div class="notice notice-info"><%- icon('info') %><div><%= __('Английское название показывается на английской версии сайта. Если оно не заполнено, используется встроенный словарь, а если нет и его — русское название. Изменения применяются сразу.') %></div></div>
+  <label class="check tax-filter"><input type="checkbox" data-only-missing> <span><%= __('Показывать только без английского названия') %> (<%= missingGenres + missingTags %>)</span></label>
+
   <section class="section panel" id="genres">
-    <div class="section-head"><h2><%= __('Жанры (') %><%= genres.length %>)</h2></div>
-    <form method="post" action="/admin/genres" class="inline-form">
+    <div class="section-head">
+      <h2><%= __('Жанры (') %><%= genres.length %>)</h2>
+      <% if (missingGenres) { %><span class="status status-pending"><%= __('без перевода: {n}', { n: missingGenres }) %></span><% } %>
+    </div>
+    <form method="post" action="/admin/genres" class="inline-form tax-new">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-      <input class="input input-sm" name="name" placeholder="<%= __('Новый жанр') %>" required><button class="btn btn-primary btn-sm"><%- icon('plus') %><%= __('Добавить') %></button>
+      <input class="input input-sm" name="name" placeholder="<%= __('Новый жанр') %>" required>
+      <input class="input input-sm" name="name_en" placeholder="English" lang="en">
+      <button class="btn btn-primary btn-sm"><%- icon('plus') %><%= __('Добавить') %></button>
     </form>
-    <div class="tax-list">
+    <div class="tax-list tax-list-wide">
       <% genres.forEach(function (g) { %>
-        <div class="tax-item">
+        <div class="tax-item <%= g.name_en ? '' : 'is-missing' %>">
           <form method="post" action="/admin/genres/<%= g.id %>" class="inline-form">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-            <input class="input input-sm" name="name" value="<%= g.name %>" required>
-            <span class="muted small"><%= g.n %></span>
+            <input class="input input-sm" name="name" value="<%= g.name %>" required aria-label="<%= __('Название') %>">
+            <input class="input input-sm tax-en" name="name_en" value="<%= g.name_en || '' %>" placeholder="<%= __('нет перевода') %>" lang="en" aria-label="English">
+            <span class="muted small" title="<%= __('Тайтлов') %>"><%= g.n %></span>
             <button class="icon-btn small" title="<%= __('Сохранить') %>" aria-label="<%= __('Сохранить') %>"><%- icon('check') %></button>
           </form>
           <form method="post" action="/admin/genres/<%= g.id %>/delete" data-confirm="<%= __('Удалить жанр «{name}»? Он пропадёт у {n} тайтлов.', { name: g.name, n: g.n }) %>">
@@ -27,30 +41,37 @@
   </section>
 
   <section class="section panel" id="tags">
-    <div class="section-head"><h2><%= __('Теги') %></h2></div>
-    <form method="post" action="/admin/tags" class="inline-form">
+    <div class="section-head">
+      <h2><%= __('Теги') %> (<%= allTags.length %>)</h2>
+      <% if (missingTags) { %><span class="status status-pending"><%= __('без перевода: {n}', { n: missingTags }) %></span><% } %>
+    </div>
+    <form method="post" action="/admin/tags" class="inline-form tax-new">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <input class="input input-sm" name="name" placeholder="<%= __('Новый тег') %>" required>
-      <select class="input input-sm select" name="tag_group"><% C.TAG_GROUPS.forEach(function (g) { %><option><%= g %></option><% }) %></select>
+      <input class="input input-sm" name="name_en" placeholder="English" lang="en">
+      <select class="input input-sm select" name="tag_group"><% C.TAG_GROUPS.forEach(function (g) { %><option value="<%= g %>"><%= __(g) %></option><% }) %></select>
       <button class="btn btn-primary btn-sm"><%- icon('plus') %><%= __('Добавить') %></button>
     </form>
     <% tagGroups.forEach(function (grp) { %>
-      <h3 class="h4"><%= __(grp.group) %></h3>
-      <div class="tax-list">
-        <% grp.tags.forEach(function (t) { %>
-          <div class="tax-item">
-            <form method="post" action="/admin/tags/<%= t.id %>" class="inline-form">
-              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-              <input class="input input-sm" name="name" value="<%= t.name %>" required>
-              <select class="input input-sm select" name="tag_group"><% C.TAG_GROUPS.forEach(function (g) { %><option <%= g === t.tag_group ? 'selected' : '' %>><%= g %></option><% }) %></select>
-              <span class="muted small"><%= t.n %></span>
-              <button class="icon-btn small" title="<%= __('Сохранить') %>" aria-label="<%= __('Сохранить') %>"><%- icon('check') %></button>
-            </form>
-            <form method="post" action="/admin/tags/<%= t.id %>/delete" data-confirm="<%= __('Удалить тег «{name}»?', { name: t.name }) %>">
-              <input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="icon-btn small danger" title="<%= __('Удалить') %>" aria-label="<%= __('Удалить') %>"><%- icon('trash') %></button>
-            </form>
-          </div>
-        <% }) %>
+      <div class="tax-group">
+        <h3 class="h4"><%= __(grp.group) %></h3>
+        <div class="tax-list tax-list-wide">
+          <% grp.tags.forEach(function (t) { %>
+            <div class="tax-item <%= t.name_en ? '' : 'is-missing' %>">
+              <form method="post" action="/admin/tags/<%= t.id %>" class="inline-form">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <input class="input input-sm" name="name" value="<%= t.name %>" required aria-label="<%= __('Название') %>">
+                <input class="input input-sm tax-en" name="name_en" value="<%= t.name_en || '' %>" placeholder="<%= __('нет перевода') %>" lang="en" aria-label="English">
+                <select class="input input-sm select" name="tag_group" aria-label="<%= __('Группа') %>"><% C.TAG_GROUPS.forEach(function (g) { %><option value="<%= g %>" <%= g === t.tag_group ? 'selected' : '' %>><%= __(g) %></option><% }) %></select>
+                <span class="muted small" title="<%= __('Тайтлов') %>"><%= t.n %></span>
+                <button class="icon-btn small" title="<%= __('Сохранить') %>" aria-label="<%= __('Сохранить') %>"><%- icon('check') %></button>
+              </form>
+              <form method="post" action="/admin/tags/<%= t.id %>/delete" data-confirm="<%= __('Удалить тег «{name}»?', { name: t.name }) %>">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="icon-btn small danger" title="<%= __('Удалить') %>" aria-label="<%= __('Удалить') %>"><%- icon('trash') %></button>
+              </form>
+            </div>
+          <% }) %>
+        </div>
       </div>
     <% }) %>
   </section>

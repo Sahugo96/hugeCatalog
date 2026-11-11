@@ -75,3 +75,27 @@ test('причина «admin»: полное удаление у админис�
   const row = q('SELECT moderation, reject_reason FROM works WHERE id = ?').get(b.id);
   assert.deepStrictEqual({ ...row }, { moderation: 'rejected', reject_reason: 'admin' }, 'у модератора — обычное снятие с публикации');
 });
+
+test('английские названия жанров и тегов из админки применяются сразу', async (t) => {
+  const server = createApp().listen(0);
+  t.after(() => server.close());
+  const base = `http://127.0.0.1:${server.address().port}`;
+  const admin = await session(base, 'admin', 'admin-test-pass');
+  const enCatalog = async () => (await (await fetch(`${base}/catalog`, { headers: { Cookie: 'lang=en' } })).text());
+
+  // Перевод по умолчанию перенесён из словаря в базу.
+  assert.strictEqual(q(`SELECT name_en FROM genres WHERE name = 'Боевик'`).get().name_en, 'Action');
+
+  await admin.post('/admin/genres', { name: 'Космоопера', name_en: 'Space opera' }, '/admin/taxonomy');
+  assert.match(await enCatalog(), /Space opera/, 'новый жанр сразу переведён');
+
+  const id = q(`SELECT id FROM genres WHERE name = 'Космоопера'`).get().id;
+  await admin.post(`/admin/genres/${id}`, { name: 'Космическая опера', name_en: 'Space Opera' }, '/admin/taxonomy');
+  const html = await enCatalog();
+  assert.match(html, /Space Opera/, 'перевод сохранился после переименования');
+  assert.doesNotMatch(html, /Космическая опера/);
+
+  await admin.post('/admin/tags', { name: 'Без перевода', tag_group: 'Прочее' }, '/admin/taxonomy');
+  const page = await (await admin.req('/admin/taxonomy')).text();
+  assert.match(page, /без перевода: 1/, 'счётчик записей без перевода');
+});

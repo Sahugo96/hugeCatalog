@@ -791,6 +791,20 @@ a.dash-card:hover { border-color: var(--accent); color: var(--text); }
 .tax-item .inline-form .input { min-width: 0; }
 .tax-item .select { max-width: 120px; }
 .tax-item form { margin: 0; }
+.tax-list-wide { grid-template-columns: repeat(auto-fill, minmax(440px, 1fr)); }
+.tax-item { min-width: 0; }
+.tax-item .inline-form { min-width: 0; }
+.tax-item .inline-form .input { width: 0; min-width: 0; flex: 1 1 0; }
+.tax-item .inline-form .select { flex: 0 0 112px; width: 112px; }
+.tax-item .inline-form > span { flex: 0 0 auto; min-width: 18px; text-align: right; }
+.tax-item .tax-en { font-style: normal; }
+.tax-item.is-missing .tax-en { border-color: var(--warn); background: var(--warn-soft); }
+.tax-item.is-missing .tax-en::placeholder { color: var(--warn); }
+.tax-new .input { max-width: 240px; }
+.tax-filter { margin-bottom: 4px; }
+body.only-missing .tax-item:not(.is-missing) { display: none; }
+body.only-missing .tax-group:not(:has(.is-missing)) { display: none; }
+@media (max-width: 720px) { .tax-list-wide { grid-template-columns: 1fr; } }
 
 /* ---------- Адаптивность ---------- */
 

@@ -21,6 +21,9 @@ function hasColumn(table, column) {
 if (!hasColumn('works', 'group_id')) db.exec('ALTER TABLE works ADD COLUMN group_id INTEGER');
 db.exec('CREATE INDEX IF NOT EXISTS idx_works_group ON works(group_id)');
 // Запрет писать в чат до указанного времени (UTC, формат SQLite).
+// Английские названия жанров и тегов (редактируются в админке).
+if (!hasColumn('genres', 'name_en')) db.exec('ALTER TABLE genres ADD COLUMN name_en TEXT');
+if (!hasColumn('tags', 'name_en')) db.exec('ALTER TABLE tags ADD COLUMN name_en TEXT');
 // Ключ серии из импорта: выпуски одной серии на одном языке собираются в одно произведение.
 if (!hasColumn('works', 'import_key')) db.exec('ALTER TABLE works ADD COLUMN import_key TEXT');
 db.exec('CREATE INDEX IF NOT EXISTS idx_works_import_key ON works(import_key, language)');

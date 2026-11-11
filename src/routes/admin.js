@@ -8,6 +8,7 @@ const C = require('../constants');
 const { requireStaff, requireAdmin, isAdmin } = require('../auth');
 const Chat = require('../services/chat');
 const N = require('../services/notify');
+const TI = require('../services/taxonomy-i18n');
 const { uniqueSlug, toInt, searchNormalize, escapeLike } = require('../util');
 
 const router = express.Router();
@@ -281,15 +282,18 @@ router.get('/taxonomy', (req, res) => {
   res.render('admin/taxonomy', { title: 'Жанры, теги и авторы', genres, tagGroups: W.tagsByGroup(tags), authors });
 });
 
-function taxonomyRoutes(table, label, hasGroup) {
+function taxonomyRoutes(table, label, hasGroup, hasEnglish) {
   router.post(`/${table}`, (req, res) => {
     const name = String(req.body.name || '').trim().slice(0, 60);
+    const nameEn = hasEnglish ? String(req.body.name_en || '').trim().slice(0, 60) || null : null;
     const group = hasGroup && C.TAG_GROUPS.includes(req.body.tag_group) ? req.body.tag_group : 'Прочее';
     if (!name) req.flash('error', 'Укажите название.');
     else if (q(`SELECT 1 FROM ${table} WHERE name = ?`).get(name)) req.flash('error', `${label} «${name}» уже существует.`);
     else {
-      if (hasGroup) q(`INSERT INTO ${table} (name, slug, tag_group) VALUES (?, ?, ?)`).run(name, uniqueSlug(db, table, name), group);
+      if (hasGroup) q(`INSERT INTO ${table} (name, slug, tag_group, name_en) VALUES (?, ?, ?, ?)`).run(name, uniqueSlug(db, table, name), group, nameEn);
+      else if (hasEnglish) q(`INSERT INTO ${table} (name, slug, name_en) VALUES (?, ?, ?)`).run(name, uniqueSlug(db, table, name), nameEn);
       else q(`INSERT INTO ${table} (name, slug) VALUES (?, ?)`).run(name, uniqueSlug(db, table, name));
+      if (hasEnglish) TI.refresh();
       req.flash('success', `${label} «${name}» добавлен.`);
     }
     res.redirect(`/admin/taxonomy#${table}`);
@@ -304,6 +308,10 @@ function taxonomyRoutes(table, label, hasGroup) {
       req.flash('error', `«${name}» уже существует.`);
     } else {
       q(`UPDATE ${table} SET name = ? WHERE id = ?`).run(name, id);
+      if (hasEnglish) {
+        q(`UPDATE ${table} SET name_en = ? WHERE id = ?`).run(String(req.body.name_en || '').trim().slice(0, 120) || null, id);
+        TI.refresh();
+      }
       if (hasGroup && C.TAG_GROUPS.includes(req.body.tag_group)) q(`UPDATE ${table} SET tag_group = ? WHERE id = ?`).run(req.body.tag_group, id);
       if (table === 'authors') {
         // Обновляем поисковый текст произведений этого автора.
@@ -321,13 +329,14 @@ function taxonomyRoutes(table, label, hasGroup) {
 
   router.post(`/${table}/:id/delete`, (req, res) => {
     q(`DELETE FROM ${table} WHERE id = ?`).run(toInt(req.params.id));
+    if (hasEnglish) TI.refresh();
     req.flash('success', 'Удалено.');
     res.redirect(`/admin/taxonomy#${table}`);
   });
 }
 
-taxonomyRoutes('genres', 'Жанр', false);
-taxonomyRoutes('tags', 'Тег', true);
+taxonomyRoutes('genres', 'Жанр', false, true);
+taxonomyRoutes('tags', 'Тег', true, true);
 taxonomyRoutes('authors', 'Автор', false);
 
 module.exports = router;

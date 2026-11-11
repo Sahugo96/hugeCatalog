@@ -246,6 +246,8 @@ async function importWorks(input, options = {}) {
       entry.messages.push(err.message);
     }
   }
+  // Новые жанры/теги из импорта: подхватываем переводы из словаря, если они там есть.
+  if (options.createMissing) require('./taxonomy-i18n').init();
   return report;
 }
 
