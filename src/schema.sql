@@ -167,3 +167,72 @@ CREATE TABLE IF NOT EXISTS reading_history (
   updated_at TEXT NOT NULL DEFAULT (datetime('now')),
   PRIMARY KEY (user_id, work_id)
 );
+
+/* ======================= Уведомления ======================= */
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  type       TEXT NOT NULL,
+  title      TEXT NOT NULL,
+  body       TEXT NOT NULL DEFAULT '',
+  link       TEXT,
+  is_read    INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, is_read, id);
+
+/* ======================= Чат ======================= */
+
+-- Личная переписка двух пользователей (user_a < user_b).
+CREATE TABLE IF NOT EXISTS conversations (
+  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_a          INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_b          INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  a_last_read     INTEGER NOT NULL DEFAULT 0,
+  b_last_read     INTEGER NOT NULL DEFAULT 0,
+  created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+  last_message_at TEXT,
+  UNIQUE (user_a, user_b)
+);
+
+-- conversation_id IS NULL — сообщение общего чата.
+CREATE TABLE IF NOT EXISTS chat_messages (
+  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  conversation_id INTEGER REFERENCES conversations(id) ON DELETE CASCADE,
+  sender_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  body            TEXT NOT NULL,
+  created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+  deleted_at      TEXT,
+  deleted_by      INTEGER REFERENCES users(id) ON DELETE SET NULL
+);
+CREATE INDEX IF NOT EXISTS idx_chat_conv ON chat_messages(conversation_id, id);
+CREATE INDEX IF NOT EXISTS idx_chat_sender ON chat_messages(sender_id, id);
+
+CREATE TABLE IF NOT EXISTS chat_reports (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  message_id  INTEGER NOT NULL REFERENCES chat_messages(id) ON DELETE CASCADE,
+  reporter_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  reason      TEXT NOT NULL DEFAULT '',
+  created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+  resolved_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  resolved_at TEXT,
+  UNIQUE (message_id, reporter_id)
+);
+
+CREATE TABLE IF NOT EXISTS user_blocks (
+  blocker_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  blocked_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (blocker_id, blocked_id)
+);
+
+-- Журнал действий администрации в чате (кто и когда открывал личные переписки, удалял сообщения).
+CREATE TABLE IF NOT EXISTS moderation_log (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  actor_id   INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  action     TEXT NOT NULL,
+  target     TEXT NOT NULL DEFAULT '',
+  details    TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);

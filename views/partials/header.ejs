@@ -20,9 +20,11 @@
     })();
   </script>
   <link rel="stylesheet" href="/static/css/style.css?v=<%= assetVersion %>">
+  <link rel="stylesheet" href="/static/css/chat.css?v=<%= assetVersion %>">
   <script src="/static/js/app.js?v=<%= assetVersion %>" defer></script>
+  <script src="/static/js/chat.js?v=<%= assetVersion %>" defer></script>
 </head>
-<body class="<%= typeof bodyClass !== 'undefined' ? bodyClass : '' %>" data-auth="<%= user ? '1' : '0' %>">
+<body class="<%= typeof bodyClass !== 'undefined' ? bodyClass : '' %>" data-auth="<%= user ? '1' : '0' %>"<% if (user) { %> data-me-id="<%= user.id %>" data-me-name="<%= user.username %>" data-me-staff="<%= isStaff ? '1' : '0' %>"<% } %>>
 <% if (typeof bodyClass === 'undefined' || bodyClass !== 'reader-page') { %>
 <a class="skip-link" href="#main">Перейти к содержимому</a>
 <header class="site-header">
@@ -51,6 +53,16 @@
         <span class="theme-icon-light"><%- icon('sun') %></span><span class="theme-icon-dark"><%- icon('moon') %></span>
       </button>
       <% if (user) { %>
+        <div class="dropdown notif-dropdown">
+          <button class="icon-btn notif-btn" data-dropdown data-notif-toggle aria-haspopup="true" aria-expanded="false" aria-label="Уведомления" title="Уведомления">
+            <%- icon('bell') %><span class="dot-badge" data-notif-badge <%= counters.notifications ? '' : 'hidden' %>><%= counters.notifications > 99 ? '99+' : counters.notifications %></span>
+          </button>
+          <div class="dropdown-menu notif-menu" role="menu">
+            <div class="notif-head"><strong>Уведомления</strong><button class="link-btn small" data-notif-readall>Прочитать все</button></div>
+            <div class="notif-list" data-notif-list><div class="search-empty">Загрузка…</div></div>
+            <a class="notif-all" href="/notifications">Все уведомления</a>
+          </div>
+        </div>
         <div class="dropdown">
           <button class="user-btn" data-dropdown aria-haspopup="true" aria-expanded="false">
             <span class="avatar"><%= user.username.slice(0, 1).toUpperCase() %></span>
@@ -58,6 +70,8 @@
           </button>
           <div class="dropdown-menu" role="menu">
             <a href="/profile" role="menuitem"><%- icon('bookmark') %>Избранное и история</a>
+            <a href="/notifications" role="menuitem"><%- icon('bell') %>Уведомления</a>
+            <button type="button" role="menuitem" data-chat-open="dm"><%- icon('chat') %>Личные сообщения</button>
             <a href="/studio" role="menuitem"><%- icon('upload') %>Студия</a>
             <% if (myTeams.length) { %>
               <div class="dropdown-label">Мои команды</div>

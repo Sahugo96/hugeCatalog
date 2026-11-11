@@ -1,0 +1,33 @@
+<%- include('../partials/header') %>
+<div class="container narrow page-pad">
+  <div class="breadcrumbs"><a href="/admin/chat?tab=dms">Личные переписки</a> / <span><%= conv.a_name %> ↔ <%= conv.b_name %></span></div>
+  <h1><%= conv.a_name %> ↔ <%= conv.b_name %></h1>
+  <div class="notice notice-warn"><%- icon('shield') %><div>Просмотр записан в журнал модерации. Удалённые сообщения показаны для проверки и помечены.</div></div>
+  <div class="row-gap" style="margin-bottom: 16px">
+    <% [[conv.user_a, conv.a_name], [conv.user_b, conv.b_name]].forEach(function (p) { %>
+      <form method="post" action="/admin/chat/mute/<%= p[0] %>" class="inline-form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="back" value="<%= currentUrl %>">
+        <span class="small"><%= p[1] %>:</span>
+        <select class="input input-sm select" name="hours"><option value="24">1 день</option><option value="168">7 дней</option><option value="720">30 дней</option><option value="87600">навсегда</option><option value="0">снять</option></select>
+        <button class="btn btn-ghost btn-sm">Запрет писать</button>
+      </form>
+    <% }) %>
+  </div>
+  <div class="admin-conv">
+    <% messages.forEach(function (m) { %>
+      <div class="admin-msg <%= m.sender_id === conv.user_a ? 'side-a' : 'side-b' %> <%= m.deleted_at ? 'is-deleted' : '' %>" id="m<%= m.id %>">
+        <div class="admin-msg-head"><strong><%= m.username %></strong> <span class="muted small"><%= util.formatDate(m.created_at) %> <%= m.created_at.slice(11, 16) %> UTC</span>
+          <% if (m.deleted_at) { %><span class="status status-rejected">удалено</span><% } %></div>
+        <div class="admin-msg-body"><%= m.body %></div>
+        <% if (!m.deleted_at) { %>
+          <form method="post" action="/admin/chat/messages/<%= m.id %>/delete" data-confirm="Удалить сообщение?">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="back" value="<%= currentUrl %>">
+            <button class="link-btn small">Удалить</button>
+          </form>
+        <% } %>
+      </div>
+    <% }) %>
+    <% if (!messages.length) { %><div class="empty">Сообщений нет.</div><% } %>
+  </div>
+</div>
+<%- include('../partials/footer') %>

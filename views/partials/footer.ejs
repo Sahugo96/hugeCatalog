@@ -30,5 +30,22 @@
   <div class="container footer-bottom muted">© <%= new Date().getFullYear() %> <%= SITE_NAME %>. Все права на произведения принадлежат их авторам.</div>
 </footer>
 <% } %>
+<% if (typeof bodyClass === 'undefined' || bodyClass !== 'reader-page') { %>
+<div class="chat-widget" data-chat>
+  <button class="chat-fab" data-chat-toggle aria-label="Открыть чат" title="Чат" aria-expanded="false">
+    <%- icon('chat') %><span class="dot-badge" data-chat-badge <%= counters.messages ? '' : 'hidden' %>><%= counters.messages %></span>
+  </button>
+  <section class="chat-panel" data-chat-panel role="dialog" aria-label="Чат" hidden>
+    <header class="chat-head">
+      <div class="chat-tabs" role="tablist">
+        <button role="tab" class="chat-tab" data-chat-tab="global">Общий <span class="online-pill" data-online hidden></span></button>
+        <button role="tab" class="chat-tab" data-chat-tab="dm">Личные <span class="count-badge" data-dm-badge <%= counters.messages ? '' : 'hidden' %>><%= counters.messages %></span></button>
+      </div>
+      <button class="icon-btn small" data-chat-close aria-label="Свернуть чат"><%- icon('x') %></button>
+    </header>
+    <div class="chat-body" data-chat-body></div>
+  </section>
+</div>
+<% } %>
 </body>
 </html>

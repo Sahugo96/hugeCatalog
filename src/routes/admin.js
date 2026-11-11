@@ -5,7 +5,9 @@ const { q, db } = require('../db');
 const W = require('../services/works');
 const { importWorks } = require('../services/import');
 const C = require('../constants');
-const { requireStaff, requireAdmin } = require('../auth');
+const { requireStaff, requireAdmin, isAdmin } = require('../auth');
+const Chat = require('../services/chat');
+const N = require('../services/notify');
 const { uniqueSlug, toInt, searchNormalize, escapeLike } = require('../util');
 
 const router = express.Router();
@@ -23,7 +25,8 @@ router.get('/', (req, res) => {
     (SELECT COUNT(*) FROM works WHERE moderation = 'approved') AS works,
     (SELECT COUNT(*) FROM chapters) AS chapters,
     (SELECT COUNT(*) FROM chapters WHERE created_at >= datetime('now', '-1 day')) AS new_chapters,
-    (SELECT COALESCE(SUM(views + reads), 0) FROM daily_views WHERE day = date('now')) AS views_today`).get();
+    (SELECT COALESCE(SUM(views + reads), 0) FROM daily_views WHERE day = date('now')) AS views_today,
+    (SELECT COUNT(*) FROM chat_reports WHERE resolved_at IS NULL) AS open_reports`).get();
   res.render('admin/index', { title: 'Админ-панель', counts, stats: W.siteStats() });
 });
 
@@ -39,7 +42,10 @@ router.get('/teams', (req, res) => {
 });
 
 router.post('/teams/:id/approve', (req, res) => {
-  q(`UPDATE teams SET status = 'approved', reject_reason = NULL, reviewed_at = ? WHERE id = ?`).run(now(), toInt(req.params.id));
+  const teamId = toInt(req.params.id);
+  q(`UPDATE teams SET status = 'approved', reject_reason = NULL, reviewed_at = ? WHERE id = ?`).run(now(), teamId);
+  const team = q('SELECT name, slug, owner_id FROM teams WHERE id = ?').get(teamId);
+  if (team) N.notify([team.owner_id], { type: 'team_approved', title: `Команда «${team.name}» одобрена`, body: 'Теперь вы можете добавлять участников и загружать произведения.', link: `/team/${team.slug}` });
   req.flash('success', 'Команда одобрена.');
   res.redirect('/admin/teams');
 });
@@ -47,11 +53,20 @@ router.post('/teams/:id/approve', (req, res) => {
 router.post('/teams/:id/reject', (req, res) => {
   const reason = String(req.body.reason || '').trim().slice(0, 500) || 'Без указания причины';
   q(`UPDATE teams SET status = 'rejected', reject_reason = ?, reviewed_at = ? WHERE id = ?`).run(reason, now(), toInt(req.params.id));
+  const team = q('SELECT name, slug, owner_id FROM teams WHERE id = ?').get(toInt(req.params.id));
+  if (team) N.notify([team.owner_id], { type: 'team_rejected', title: `Заявка команды «${team.name}» отклонена`, body: `Причина: ${reason}`, link: `/team/${team.slug}` });
   req.flash('success', 'Заявка отклонена.');
   res.redirect('/admin/teams');
 });
 
 /* ---------- Модерация произведений ---------- */
+
+/** Уведомить загрузившего и участников команды произведения. */
+function notifyWorkTeam(workId, actorId, build) {
+  const w = q('SELECT id, slug, title, uploader_id, team_id FROM works WHERE id = ?').get(workId);
+  if (!w) return;
+  N.notify([w.uploader_id, ...N.teamMemberIds(w.team_id)].filter(Boolean), build(w), { exclude: [actorId] });
+}
 
 router.get('/works', (req, res) => {
   const status = MOD_STATUSES.includes(req.query.status) ? req.query.status : 'pending';
@@ -72,6 +87,7 @@ router.get('/works', (req, res) => {
 router.post('/works/:id/approve', (req, res) => {
   const id = toInt(req.params.id);
   q(`UPDATE works SET moderation = 'approved', reject_reason = NULL, published_at = COALESCE(published_at, ?) WHERE id = ?`).run(now(), id);
+  notifyWorkTeam(id, req.user.id, (w) => ({ type: 'work_approved', title: `«${w.title}» опубликовано`, body: 'Произведение прошло модерацию и появилось в каталоге.', link: `/title/${w.slug}` }));
   W.bumpTextIndex();
   req.flash('success', 'Произведение опубликовано.');
   res.redirect(String(req.body.back || '').startsWith('/') && !String(req.body.back).startsWith('//') ? req.body.back : '/admin/works');
@@ -80,6 +96,7 @@ router.post('/works/:id/approve', (req, res) => {
 router.post('/works/:id/reject', (req, res) => {
   const reason = String(req.body.reason || '').trim().slice(0, 1000) || 'Без указания причины';
   q(`UPDATE works SET moderation = 'rejected', reject_reason = ? WHERE id = ?`).run(reason, toInt(req.params.id));
+  notifyWorkTeam(toInt(req.params.id), req.user.id, (w) => ({ type: 'work_rejected', title: `«${w.title}» отклонено`, body: `Причина: ${reason}`, link: `/studio/works/${w.id}` }));
   W.bumpTextIndex();
   req.flash('success', 'Произведение отклонено, команда увидит причину в студии.');
   res.redirect('/admin/works');
@@ -102,6 +119,107 @@ router.post('/import', async (req, res) => {
   }
   const report = await importWorks(data, { ...options, uploaderId: req.user.id });
   res.render('admin/import', { title: 'Импорт произведений', json: '', report, error: null, options });
+});
+
+/* ---------- Модерация чата ---------- */
+
+const CHAT_TABS = ['reports', 'global', 'dms', 'search', 'log'];
+
+router.get('/chat', (req, res) => {
+  let tab = CHAT_TABS.includes(req.query.tab) ? req.query.tab : 'reports';
+  if (['dms', 'search', 'log'].includes(tab) && !isAdmin(req.user)) tab = 'reports';
+  const data = { tab, search: String(req.query.q || '').trim(), userFilter: String(req.query.user || '').trim() };
+
+  if (tab === 'reports') {
+    data.reports = q(`SELECT r.id, r.reason, r.created_at, r.message_id, ru.username AS reporter,
+        m.body, m.conversation_id, m.deleted_at, m.created_at AS message_at, su.id AS sender_id, su.username AS sender, su.chat_muted_until,
+        (SELECT COUNT(*) FROM chat_reports r2 WHERE r2.message_id = r.message_id AND r2.resolved_at IS NULL) AS reports_count
+      FROM chat_reports r JOIN chat_messages m ON m.id = r.message_id
+      JOIN users ru ON ru.id = r.reporter_id JOIN users su ON su.id = m.sender_id
+      WHERE r.resolved_at IS NULL ORDER BY r.id DESC LIMIT 200`).all();
+  } else if (tab === 'global') {
+    data.messages = q(`${Chat.SELECT_MSG} WHERE m.conversation_id IS NULL ORDER BY m.id DESC LIMIT 200`).all();
+  } else if (tab === 'dms') {
+    const params = [];
+    let where = 'c.last_message_at IS NOT NULL';
+    if (data.userFilter) {
+      where += ' AND (ua.username = ? OR ub.username = ?)';
+      params.push(data.userFilter, data.userFilter);
+    }
+    data.conversations = q(`SELECT c.id, c.last_message_at, ua.username AS a_name, ub.username AS b_name,
+        (SELECT COUNT(*) FROM chat_messages WHERE conversation_id = c.id) AS n
+      FROM conversations c JOIN users ua ON ua.id = c.user_a JOIN users ub ON ub.id = c.user_b
+      WHERE ${where} ORDER BY c.last_message_at DESC LIMIT 300`).all(...params);
+  } else if (tab === 'search') {
+    const params = [];
+    const where = [];
+    if (data.search) { where.push(`m.body LIKE ? ESCAPE '\\'`); params.push(`%${escapeLike(data.search)}%`); }
+    if (data.userFilter) { where.push('u.username = ?'); params.push(data.userFilter); }
+    data.messages = where.length
+      ? q(`${Chat.SELECT_MSG} WHERE ${where.join(' AND ')} ORDER BY m.id DESC LIMIT 300`).all(...params)
+      : [];
+    if (where.length) Chat.log(req.user.id, 'search_messages', data.userFilter ? `user:${data.userFilter}` : '', data.search);
+  } else if (tab === 'log') {
+    data.log = q(`SELECT l.*, u.username AS actor FROM moderation_log l LEFT JOIN users u ON u.id = l.actor_id ORDER BY l.id DESC LIMIT 300`).all();
+  }
+  data.openReports = q('SELECT COUNT(*) AS n FROM chat_reports WHERE resolved_at IS NULL').get().n;
+  res.render('admin/chat', { title: 'Модерация чата', ...data });
+});
+
+router.get('/chat/conversations/:id', requireAdmin, (req, res, next) => {
+  const conv = Chat.getConversation(toInt(req.params.id));
+  if (!conv) return next();
+  Chat.log(req.user.id, 'view_conversation', `conversation:${conv.id}`, `${conv.a_name} ↔ ${conv.b_name}`);
+  const messages = q(`${Chat.SELECT_MSG} WHERE m.conversation_id = ? ORDER BY m.id ASC LIMIT 2000`).all(conv.id);
+  res.render('admin/conversation', { title: `Переписка ${conv.a_name} ↔ ${conv.b_name}`, conv, messages });
+});
+
+function backTo(req, fallback) {
+  const back = String(req.body.back || '');
+  return back.startsWith('/admin/') ? back : fallback;
+}
+
+router.post('/chat/messages/:id/delete', (req, res) => {
+  const id = toInt(req.params.id);
+  const m = q('SELECT conversation_id FROM chat_messages WHERE id = ?').get(id);
+  const reported = q('SELECT 1 FROM chat_reports WHERE message_id = ?').get(id);
+  // Модератор удаляет сообщения общего чата и те, на которые пожаловались; админ — любые.
+  if (m && (isAdmin(req.user) || !m.conversation_id || reported)) {
+    try {
+      Chat.deleteMessage(req.user, id, { asStaff: true });
+      q(`UPDATE chat_reports SET resolved_at = datetime('now'), resolved_by = ? WHERE message_id = ? AND resolved_at IS NULL`).run(req.user.id, id);
+      req.flash('success', 'Сообщение удалено.');
+    } catch (err) {
+      req.flash('error', err.message);
+    }
+  }
+  res.redirect(backTo(req, '/admin/chat'));
+});
+
+router.post('/chat/reports/:id/resolve', (req, res) => {
+  const r = q('SELECT message_id FROM chat_reports WHERE id = ?').get(toInt(req.params.id));
+  if (r) {
+    q(`UPDATE chat_reports SET resolved_at = datetime('now'), resolved_by = ? WHERE message_id = ? AND resolved_at IS NULL`).run(req.user.id, r.message_id);
+    Chat.log(req.user.id, 'dismiss_report', `message:${r.message_id}`);
+    req.flash('success', 'Жалоба отклонена.');
+  }
+  res.redirect('/admin/chat?tab=reports');
+});
+
+router.post('/chat/mute/:userId', (req, res) => {
+  const uid = toInt(req.params.userId);
+  const target = q('SELECT id, username, role FROM users WHERE id = ?').get(uid);
+  if (!target || target.id === req.user.id || (target.role !== 'user' && !isAdmin(req.user))) {
+    req.flash('error', 'Нельзя ограничить этого пользователя.');
+  } else {
+    const hours = Math.max(0, toInt(req.body.hours, 0));
+    Chat.muteUser(req.user, uid, hours);
+    if (hours) {
+      N.notify([uid], { type: 'mute', title: 'Ограничение в чате', body: `Вам запрещено писать в чат на ${hours >= 24 ? Math.round(hours / 24) + ' дн.' : hours + ' ч'} за нарушение правил.`, link: '/about#rules' });
+    }
+    req.flash('success', hours ? `${target.username}: запрет писать на ${hours} ч.` : `${target.username}: ограничение снято.`);
+  }
+  res.redirect(backTo(req, '/admin/chat'));
 });
 
 /* ---------- Пользователи (только админ) ---------- */

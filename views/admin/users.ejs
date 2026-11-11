@@ -9,7 +9,7 @@
       <tbody>
         <% users.forEach(function (u) { %>
           <tr class="<%= u.is_banned ? 'row-banned' : '' %>">
-            <td><a href="/user/<%= encodeURIComponent(u.username) %>"><%= u.username %></a><% if (u.is_banned) { %> <span class="status status-rejected">заблокирован</span><% } %></td>
+            <td><a href="/user/<%= encodeURIComponent(u.username) %>"><%= u.username %></a><% if (u.is_banned) { %> <span class="status status-rejected">заблокирован</span><% } %><% if (u.chat_muted_until && u.chat_muted_until > new Date().toISOString().replace('T', ' ').slice(0, 19)) { %> <span class="status status-pending" title="до <%= u.chat_muted_until %> UTC">без чата</span><% } %></td>
             <td class="hide-sm"><%= u.email %></td>
             <td class="hide-sm nowrap"><%= util.formatDate(u.created_at) %></td>
             <td>

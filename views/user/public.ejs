@@ -6,6 +6,11 @@
       <h1><%= profile.username %></h1>
       <p class="muted">С нами с <%= util.formatDate(profile.created_at) %><% if (profile.role !== 'user') { %> · <%= labelOf(C.ROLES, profile.role) %><% } %></p>
     </div>
+    <% if (user && user.id !== profile.id) { %>
+      <div class="profile-actions"><button class="btn btn-primary btn-sm" data-open-dm="<%= profile.username %>"><%- icon('chat') %>Написать сообщение</button></div>
+    <% } else if (!user) { %>
+      <div class="profile-actions"><a class="btn btn-ghost btn-sm" href="/login"><%- icon('chat') %>Войдите, чтобы написать</a></div>
+    <% } %>
   </div>
   <% if (profile.about) { %><div class="prose"><p><%= profile.about %></p></div><% } %>
   <% if (teams.length) { %>

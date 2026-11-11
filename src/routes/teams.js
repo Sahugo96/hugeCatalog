@@ -3,6 +3,7 @@
 const express = require('express');
 const { q, db } = require('../db');
 const W = require('../services/works');
+const N = require('../services/notify');
 const { requireAuth, verifyCsrf, isStaff } = require('../auth');
 const { coverUpload, storeImage, removePublic, cleanupTmp, detectImageExt } = require('../upload');
 const { uniqueSlug, toInt } = require('../util');
@@ -53,6 +54,7 @@ router.post('/teams/new', requireAuth, coverUpload.single('avatar'), verifyCsrf,
   const res_ = q('INSERT INTO teams (name, slug, description, avatar, owner_id) VALUES (?, ?, ?, ?, ?)')
     .run(data.name, slug, data.description, avatar, req.user.id);
   q(`INSERT INTO team_members (team_id, user_id, role) VALUES (?, ?, 'owner')`).run(Number(res_.lastInsertRowid), req.user.id);
+  N.notifyStaff({ type: 'team_pending', title: 'Новая заявка на команду', body: `«${data.name}» от ${req.user.username}`, link: '/admin/teams' });
   req.flash('success', 'Заявка отправлена! После одобрения модератором вы сможете загружать произведения.');
   res.redirect(`/team/${slug}`);
 });
@@ -125,6 +127,7 @@ router.post('/team/:slug/members', requireAuth, ownerOnly, (req, res) => {
   else if (q('SELECT 1 FROM team_members WHERE team_id = ? AND user_id = ?').get(team.id, user.id)) req.flash('info', `${user.username} уже в команде.`);
   else {
     q(`INSERT INTO team_members (team_id, user_id, role) VALUES (?, ?, 'member')`).run(team.id, user.id);
+    N.notify([user.id], { type: 'team_member', title: `Вас добавили в команду «${team.name}»`, body: `Добавил(а): ${req.user.username}`, link: `/team/${team.slug}` });
     req.flash('success', `${user.username} добавлен(а) в команду.`);
   }
   res.redirect(`/team/${team.slug}#members`);

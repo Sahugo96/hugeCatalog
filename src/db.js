@@ -20,6 +20,8 @@ function hasColumn(table, column) {
 }
 if (!hasColumn('works', 'group_id')) db.exec('ALTER TABLE works ADD COLUMN group_id INTEGER');
 db.exec('CREATE INDEX IF NOT EXISTS idx_works_group ON works(group_id)');
+// Запрет писать в чат до указанного времени (UTC, формат SQLite).
+if (!hasColumn('users', 'chat_muted_until')) db.exec('ALTER TABLE users ADD COLUMN chat_muted_until TEXT');
 
 /** Выполнить функцию в транзакции. Поддерживает вложенные вызовы. */
 let depth = 0;

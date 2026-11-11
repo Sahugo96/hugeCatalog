@@ -26,6 +26,7 @@ const isAdmin = (user) => !!user && user.role === 'admin';
 function loadUser(req, res, next) {
   res.locals.user = null;
   res.locals.myTeams = [];
+  res.locals.counters = { notifications: 0, messages: 0 };
   const uid = req.session && req.session.userId;
   if (uid) {
     const user = q('SELECT id, username, email, role, is_banned, avatar, about, created_at FROM users WHERE id = ?').get(uid);
@@ -34,6 +35,7 @@ function loadUser(req, res, next) {
     } else {
       req.user = user;
       res.locals.user = user;
+      res.locals.counters = require('./services/notify').counters(uid);
       res.locals.myTeams = q(
         `SELECT t.id, t.name, t.slug, tm.role FROM team_members tm
          JOIN teams t ON t.id = tm.team_id

@@ -117,6 +117,7 @@ function createApp() {
     return auth.verifyCsrf(req, res, next);
   });
 
+  app.use(require('./routes/chat'));
   app.use(require('./routes/auth'));
   app.use(require('./routes/public'));
   app.use(require('./routes/user'));

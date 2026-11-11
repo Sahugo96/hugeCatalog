@@ -4,6 +4,7 @@ const express = require('express');
 const { q, transaction } = require('../db');
 const W = require('../services/works');
 const V = require('../services/versions');
+const N = require('../services/notify');
 const C = require('../constants');
 const { requireAuth, verifyCsrf, isStaff, canEditWork, teamRole } = require('../auth');
 const { coverUpload, pagesUpload, storeImage, copyPublic, removePublic, removeDir, cleanupTmp, naturalCompare, detectImageExt } = require('../upload');
@@ -133,6 +134,9 @@ router.post('/works/new', coverUpload.single('cover'), verifyCsrf, (req, res) =>
   const cover = req.file ? storeImage(req.file, 'covers', null) : copyPublic(source.cover, 'covers');
   const moderation = isStaff(req.user) ? 'approved' : 'pending';
   const id = W.saveWork(data, { teamId, uploaderId: req.user.id, moderation, cover });
+  if (moderation === 'pending') {
+    N.notifyStaff({ type: 'work_pending', title: 'Новое произведение на модерации', body: `«${data.title}» от ${req.user.username}`, link: '/admin/works' });
+  }
   if (source) {
     try {
       V.linkWorks(source.id, id);
@@ -232,6 +236,7 @@ router.post('/works/:id/edit', coverUpload.single('cover'), verifyCsrf, loadEdit
   q('UPDATE works SET team_id = ? WHERE id = ?').run(teamId, work.id);
   if (work.moderation === 'rejected') {
     q(`UPDATE works SET moderation = 'pending', reject_reason = NULL WHERE id = ?`).run(work.id);
+    N.notifyStaff({ type: 'work_pending', title: 'Произведение повторно на модерации', body: `«${data.title}» исправлено после отказа`, link: '/admin/works' });
     req.flash('success', 'Изменения сохранены, произведение повторно отправлено на модерацию.');
   } else {
     req.flash('success', 'Изменения сохранены.');
@@ -334,6 +339,14 @@ router.post('/works/:id/chapters/new', pagesUpload.array('pages', 500), verifyCs
     throw err;
   }
   W.refreshLastChapter(work.id);
+  if (work.moderation === 'approved') {
+    N.notify(N.favoriteUserIds(work.id), {
+      type: 'new_chapter',
+      title: `Новая глава: ${work.title}`,
+      body: `Глава ${data.number}${data.title ? ' — ' + data.title : ''}`,
+      link: `/title/${work.slug}/chapter/${chapterId}`,
+    }, { exclude: [req.user.id] });
+  }
   req.flash('success', `Глава ${data.number} загружена (${req.files.length} стр.).`);
   if (req.body.another) return finish(req, res, `/studio/works/${work.id}/chapters/new`);
   finish(req, res, `/studio/works/${work.id}#chapters`);
