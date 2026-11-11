@@ -45,8 +45,10 @@ const PATHS = {
   ban: '<circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/>',
   more: '<circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>',
   // Два игральных кубика (как Font Awesome «dice»): повёрнутый с пятёркой и прямой с единицей.
-  dice: '<rect x="3.35" y="3.35" width="11.3" height="11.3" rx="2.6" transform="rotate(45 9 9)"/><rect x="14" y="14" width="8.6" height="8.6" rx="2.3"/>'
-    + '<g fill="currentColor" stroke="none"><circle cx="9" cy="5.3" r="1.05"/><circle cx="5.3" cy="9" r="1.05"/><circle cx="9" cy="9" r="1.05"/><circle cx="12.7" cy="9" r="1.05"/><circle cx="9" cy="12.7" r="1.05"/><circle cx="18.3" cy="18.3" r="1.05"/></g>',
+  dice: '<rect x="3.5" y="3.5" width="12" height="12" rx="2.6" transform="rotate(45 9.5 9.5)"/>'
+    // Маленький кубик стоит позади большого: его угол, скрытый большим кубиком, не рисуем (с зазором).
+    + '<path d="M17.2 12.5H19.8A2.2 2.2 0 0 1 22 14.7V19.8A2.2 2.2 0 0 1 19.8 22H14.7A2.2 2.2 0 0 1 12.5 19.8V17.2"/>'
+    + '<g fill="currentColor" stroke="none"><circle cx="9.5" cy="5" r="1.25"/><circle cx="5" cy="9.5" r="1.25"/><circle cx="9.5" cy="9.5" r="1.25"/><circle cx="14" cy="9.5" r="1.25"/><circle cx="9.5" cy="14" r="1.25"/><circle cx="17.7" cy="17.7" r="1.25"/></g>',
   home: '<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>',
 };
 

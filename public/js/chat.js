@@ -104,17 +104,51 @@
   /* ======================= Поток событий ======================= */
 
   var source = null;
+  /*
+   * Одно соединение на весь браузер. Браузер разрешает не больше 6 одновременных соединений с сайтом
+   * (HTTP/1.1), а поток событий держит своё постоянно. Если каждая вкладка откроет поток, на 6-й вкладке
+   * сайт «зависнет»: скрипты и переходы ждут в очереди. Поэтому поток открывает только одна «ведущая»
+   * вкладка (Web Locks), а события раздаёт остальным через BroadcastChannel. Закрылась ведущая — её место
+   * автоматически занимает следующая вкладка.
+   */
+  var EVENTS = ['counters', 'notification', 'global', 'dm', 'deleted'];
+  var channel = null;
+
+  function dispatch(event, data) {
+    if (event === 'counters') applyCounters(data);
+    else if (event === 'notification') { if (document.visibilityState === 'visible') toast(data.title, data.body, data.link); }
+    else if (event === 'global') onGlobal(data);
+    else if (event === 'dm') onDirect(data);
+    else if (event === 'deleted') onDeleted(data);
+  }
+
+  function openSource(onEvent) {
+    var es = new EventSource('/api/stream');
+    EVENTS.forEach(function (name) {
+      es.addEventListener(name, function (e) { onEvent(name, JSON.parse(e.data)); });
+    });
+    window.addEventListener('pagehide', function () { es.close(); });
+    return es;
+  }
+
   function connect() {
     if (source || !window.EventSource) return;
-    source = new EventSource('/api/stream');
-    source.addEventListener('counters', function (e) { applyCounters(JSON.parse(e.data)); });
-    source.addEventListener('notification', function (e) {
-      var n = JSON.parse(e.data);
-      toast(n.title, n.body, n.link);
-    });
-    source.addEventListener('global', function (e) { onGlobal(JSON.parse(e.data)); });
-    source.addEventListener('dm', function (e) { onDirect(JSON.parse(e.data)); });
-    source.addEventListener('deleted', function (e) { onDeleted(JSON.parse(e.data)); });
+    source = true;
+    if (window.BroadcastChannel && navigator.locks && navigator.locks.request) {
+      channel = new BroadcastChannel('hc-events');
+      channel.onmessage = function (e) { dispatch(e.data.event, e.data.data); };
+      navigator.locks.request('hc-event-stream', function () {
+        // Блокировка удерживается, пока жива вкладка: промис никогда не завершается.
+        return new Promise(function () {
+          source = openSource(function (name, data) {
+            dispatch(name, data);
+            channel.postMessage({ event: name, data: data });
+          });
+        });
+      });
+    } else {
+      source = openSource(dispatch);
+    }
   }
   if (me) connect();
 
@@ -409,7 +443,7 @@
       if (!mine && document.visibilityState === 'visible') markRead();
     } else if (state.open && state.tab === 'dm' && !state.conv) {
       refreshConversationList();
-    } else if (!mine) {
+    } else if (!mine && document.visibilityState === 'visible') {
       toast(T('Сообщение от {name}', { name: m.sender.username }), m.body.slice(0, 100));
     }
   }

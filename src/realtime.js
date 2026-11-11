@@ -26,7 +26,8 @@ function connect(req, res) {
   clients.get(uid).add(res);
 
   const ping = setInterval(() => res.write(': ping\n\n'), 25000);
-  req.on('close', () => {
+  // Ответ закрывается, когда браузер разрывает соединение (закрыл вкладку, ушёл со страницы).
+  res.on('close', () => {
     clearInterval(ping);
     const set = clients.get(uid);
     if (set) {
