@@ -38,9 +38,6 @@
       <a href="/catalog?sort=updated" class=""><%- icon('clock') %>Обновления</a>
       <a href="/teams" class="<%= currentPath.startsWith('/team') ? 'active' : '' %>"><%- icon('users') %>Команды</a>
       <a href="/random" rel="nofollow"><%- icon('shuffle') %>Случайное</a>
-      <% if (user) { %>
-        <a href="/studio" class="<%= currentPath.startsWith('/studio') ? 'active' : '' %>"><%- icon('upload') %>Студия</a>
-      <% } %>
     </nav>
     <form class="header-search" action="/catalog" method="get" role="search" autocomplete="off">
       <span class="header-search-icon"><%- icon('search') %></span>

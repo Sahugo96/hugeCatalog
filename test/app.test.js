@@ -130,3 +130,23 @@ test('импорт из JSON: создание, связь по group, проп�
   const again = await importWorks(items.slice(0, 1), { skipCovers: true });
   assert.strictEqual(again[0].status, 'skipped');
 });
+
+test('просмотры: только прочтение главы вошедшим пользователем, один раз на главу', async (t) => {
+  const ch = Number(q('INSERT INTO chapters (work_id, number) VALUES (?, 1)').run(b).lastInsertRowid);
+  const slug = q('SELECT slug FROM works WHERE id = ?').get(b).slug;
+  const views = () => q('SELECT views FROM works WHERE id = ?').get(b).views;
+  const before = views();
+
+  const server = createApp().listen(0);
+  t.after(() => server.close());
+  const base = `http://127.0.0.1:${server.address().port}`;
+  assert.strictEqual((await fetch(`${base}/title/${slug}`)).status, 200);
+  assert.strictEqual((await fetch(`${base}/title/${slug}/chapter/${ch}`)).status, 200);
+  assert.strictEqual(views(), before, 'гость и открытие карточки не засчитываются');
+
+  const uid = q(`SELECT id FROM users WHERE role = 'admin'`).get().id;
+  assert.strictEqual(W.recordChapterRead(uid, b, ch), true);
+  assert.strictEqual(W.recordChapterRead(uid, b, ch), false, 'повторное открытие той же главы не засчитывается');
+  assert.strictEqual(views(), before + 1);
+  assert.strictEqual(q('SELECT views FROM chapters WHERE id = ?').get(ch).views, 1);
+});

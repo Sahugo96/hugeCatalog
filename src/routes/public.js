@@ -5,26 +5,9 @@ const { q, db } = require('../db');
 const W = require('../services/works');
 const { getVersions } = require('../services/versions');
 const { requireAuth, canEditWork } = require('../auth');
-const { today, searchNormalize, escapeLike, toInt } = require('../util');
+const { searchNormalize, escapeLike, toInt } = require('../util');
 
 const router = express.Router();
-
-/* ---------- Дедупликация просмотров (в памяти, на сутки) ---------- */
-
-let seenDay = today();
-let seen = new Set();
-function firstViewToday(req, key) {
-  const d = today();
-  if (d !== seenDay) {
-    seenDay = d;
-    seen = new Set();
-  }
-  const id = `${req.user ? 'u' + req.user.id : req.ip}|${key}`;
-  if (seen.has(id)) return false;
-  if (seen.size > 500000) seen = new Set();
-  seen.add(id);
-  return true;
-}
 
 /* ---------- Главная ---------- */
 
@@ -115,10 +98,6 @@ function loadVisibleWork(req, res) {
 router.get('/title/:slug', (req, res, next) => {
   const work = loadVisibleWork(req, res);
   if (!work) return next();
-  if (work.moderation === 'approved' && firstViewToday(req, `w${work.id}`)) {
-    W.recordView(work.id, 'view');
-    work.views++;
-  }
   const order = req.query.order === 'asc' ? 'ASC' : 'DESC';
   const chapters = W.getChapters(work.id, order);
   const firstChapter = q('SELECT id FROM chapters WHERE work_id = ? ORDER BY number ASC, id ASC LIMIT 1').get(work.id);
@@ -163,10 +142,8 @@ router.get('/title/:slug/chapter/:id', (req, res, next) => {
   const prev = pos > 0 ? chapters[pos - 1] : null;
   const next_ = pos >= 0 && pos < chapters.length - 1 ? chapters[pos + 1] : null;
 
-  if (work.moderation === 'approved' && firstViewToday(req, `c${chapter.id}`)) {
-    W.recordView(work.id, 'read');
-    q('UPDATE chapters SET views = views + 1 WHERE id = ?').run(chapter.id);
-  }
+  // Просмотр = прочтение главы вошедшим пользователем (один раз на главу).
+  if (work.moderation === 'approved' && req.user) W.recordChapterRead(req.user.id, work.id, chapter.id);
   if (req.user) {
     q(`INSERT INTO reading_history (user_id, work_id, chapter_id, updated_at) VALUES (?, ?, ?, datetime('now'))
        ON CONFLICT(user_id, work_id) DO UPDATE SET chapter_id = excluded.chapter_id, updated_at = excluded.updated_at`)

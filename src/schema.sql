@@ -159,6 +159,14 @@ CREATE TABLE IF NOT EXISTS daily_views (
 );
 CREATE INDEX IF NOT EXISTS idx_daily_views_day ON daily_views(day);
 
+-- Прочтения глав: просмотр засчитывается один раз на пользователя и главу (только для вошедших).
+CREATE TABLE IF NOT EXISTS chapter_reads (
+  user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  chapter_id INTEGER NOT NULL REFERENCES chapters(id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (user_id, chapter_id)
+);
+
 -- Последняя прочитанная глава (для "Продолжить чтение").
 CREATE TABLE IF NOT EXISTS reading_history (
   user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,

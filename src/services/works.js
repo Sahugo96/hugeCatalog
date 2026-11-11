@@ -158,13 +158,21 @@ function saveWork(data, { id = null, teamId, uploaderId, moderation, cover } = {
 
 /* ======================= Просмотры, лайки, избранное ======================= */
 
-/** kind: 'view' — открыли страницу тайтла, 'read' — открыли главу. */
-function recordView(workId, kind = 'view') {
-  const day = today();
-  q('UPDATE works SET views = views + 1 WHERE id = ?').run(workId);
-  q(`INSERT INTO daily_views (work_id, day, views, reads) VALUES (?, ?, ?, ?)
-     ON CONFLICT(work_id, day) DO UPDATE SET views = views + excluded.views, reads = reads + excluded.reads`)
-    .run(workId, day, kind === 'view' ? 1 : 0, kind === 'read' ? 1 : 0);
+/**
+ * Засчитывает прочтение главы авторизованным пользователем.
+ * Каждая глава учитывается один раз на пользователя; возвращает true, если просмотр засчитан.
+ */
+function recordChapterRead(userId, workId, chapterId) {
+  if (!userId) return false;
+  return transaction(() => {
+    const res = q('INSERT OR IGNORE INTO chapter_reads (user_id, chapter_id) VALUES (?, ?)').run(userId, chapterId);
+    if (!res.changes) return false;
+    q('UPDATE chapters SET views = views + 1 WHERE id = ?').run(chapterId);
+    q('UPDATE works SET views = views + 1 WHERE id = ?').run(workId);
+    q(`INSERT INTO daily_views (work_id, day, views, reads) VALUES (?, ?, 0, 1)
+       ON CONFLICT(work_id, day) DO UPDATE SET reads = reads + 1`).run(workId, today());
+    return true;
+  });
 }
 
 function userWorkState(userId, workId) {
@@ -354,7 +362,7 @@ function readingToday(limit = 12) {
 function topForDays(days, limit = 10) {
   const from = today(-(days - 1));
   return attachCardGenres(q(`SELECT ${CARD},
-      COALESCE((SELECT SUM(views + reads) FROM daily_views dv WHERE dv.work_id = w.id AND dv.day >= ?), 0) AS period_views,
+      COALESCE((SELECT SUM(reads) FROM daily_views dv WHERE dv.work_id = w.id AND dv.day >= ?), 0) AS period_views,
       (SELECT COUNT(*) FROM likes l WHERE l.work_id = w.id AND date(l.created_at) >= ?) AS period_likes
     FROM works w WHERE ${APPROVED}
     AND (period_views > 0 OR period_likes > 0)
@@ -539,7 +547,7 @@ module.exports = {
   getChapters,
   validateWorkInput,
   saveWork,
-  recordView,
+  recordChapterRead,
   userWorkState,
   toggle,
   parseFilters,

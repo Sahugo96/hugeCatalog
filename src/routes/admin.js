@@ -25,7 +25,7 @@ router.get('/', (req, res) => {
     (SELECT COUNT(*) FROM works WHERE moderation = 'approved') AS works,
     (SELECT COUNT(*) FROM chapters) AS chapters,
     (SELECT COUNT(*) FROM chapters WHERE created_at >= datetime('now', '-1 day')) AS new_chapters,
-    (SELECT COALESCE(SUM(views + reads), 0) FROM daily_views WHERE day = date('now')) AS views_today,
+    (SELECT COALESCE(SUM(reads), 0) FROM daily_views WHERE day = date('now')) AS views_today,
     (SELECT COUNT(*) FROM chat_reports WHERE resolved_at IS NULL) AS open_reports`).get();
   res.render('admin/index', { title: 'Админ-панель', counts, stats: W.siteStats() });
 });
