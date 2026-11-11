@@ -1,0 +1,92 @@
+<%- include('../partials/header') %>
+<%
+  var mb = function (b) { return b >= 1048576 ? (b / 1048576).toFixed(1) + ' МБ' : Math.round(b / 1024) + ' КБ'; };
+  var pct = stats.originalBytes ? Math.round(stats.savedBytes / stats.originalBytes * 100) : 0;
+%>
+<div class="container page-pad">
+  <h1><%= __('Сжатие изображений') %></h1>
+  <%- include('../partials/admin-nav') %>
+
+  <% if (!available) { %>
+    <div class="notice notice-error"><%- icon('info') %><div><%= __('Библиотека sharp не установлена — выполните npm install и перезапустите сервер.') %></div></div>
+  <% } %>
+
+  <div class="notice notice-info"><%- icon('info') %><div><%= __('Как WebP Express: рядом с каждой картинкой JPG/PNG создаётся сжатая WebP-копия, оригинал остаётся. Браузеры, которые понимают WebP, получают её по тому же адресу, остальные — оригинал. Если WebP получился тяжелее оригинала, отдаётся оригинал.') %></div></div>
+
+  <div class="dash-grid">
+    <div class="dash-card"><strong data-stat="images"><%= stats.images %></strong><span><%= __('картинок JPG/PNG') %></span></div>
+    <div class="dash-card"><strong data-stat="converted"><%= stats.converted %></strong><span><%= __('со сжатой копией') %></span></div>
+    <div class="dash-card"><strong data-stat="original"><%= mb(stats.originalBytes) %></strong><span><%= __('размер оригиналов') %></span></div>
+    <div class="dash-card <%= stats.savedBytes ? 'good' : '' %>"><strong data-stat="saved"><%= mb(stats.savedBytes) %> (<%= pct %>%)</strong><span><%= __('экономия трафика') %></span></div>
+  </div>
+
+  <section class="section panel">
+    <h2 class="h3"><%= __('Массовая обработка') %></h2>
+    <p class="muted small"><%= __('Новые картинки сжимаются сами сразу после загрузки, старые — при первом показе. Здесь можно обработать всё сразу.') %></p>
+    <div class="upload-progress" data-bulk-progress <%= bulk.running ? '' : 'hidden' %>><div class="upload-progress-fill" style="width: <%= bulk.total ? Math.round(bulk.done / bulk.total * 100) : 0 %>%"></div><span data-bulk-label><%= bulk.done %> / <%= bulk.total %></span></div>
+    <div class="row-gap" style="margin-top: 12px">
+      <form method="post" action="/admin/images/convert" data-bulk-form>
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="force" value="0">
+        <button class="btn btn-primary" <%= available && !bulk.running ? '' : 'disabled' %>><%- icon('layers') %><%= __('Сжать все несжатые') %></button>
+      </form>
+      <form method="post" action="/admin/images/convert" data-bulk-form>
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="force" value="1">
+        <button class="btn btn-ghost" <%= available && !bulk.running ? '' : 'disabled' %>><%= __('Пересоздать все') %></button>
+      </form>
+      <form method="post" action="/admin/images/delete" data-confirm="<%= __('Удалить все WebP-копии? Оригиналы останутся, сайт будет отдавать их, пока копии не создадутся заново.') %>">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button class="btn btn-danger"><%- icon('trash') %><%= __('Удалить все WebP') %></button>
+      </form>
+    </div>
+    <p class="small muted" data-bulk-result><% if (bulk.finishedAt) { %><%= __('Последний запуск: обработано {done}, сжато {converted}, ошибок {errors}, сэкономлено {saved}.', { done: bulk.done, converted: bulk.converted, errors: bulk.errors, saved: mb(bulk.saved) }) %><% } %></p>
+  </section>
+
+  <section class="section panel">
+    <h2 class="h3"><%= __('Настройки') %></h2>
+    <form method="post" action="/admin/images/settings" class="form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <label class="check"><input type="checkbox" name="enabled" value="1" <%= settings.enabled ? 'checked' : '' %>><span><%= __('Отдавать WebP браузерам, которые его поддерживают') %></span></label>
+      <label class="check"><input type="checkbox" name="on_upload" value="1" <%= settings.onUpload ? 'checked' : '' %>><span><%= __('Сжимать сразу после загрузки') %></span></label>
+      <label class="field" style="max-width: 420px">
+        <span><%= __('Качество JPEG') %>: <strong data-quality-value><%= settings.quality %></strong></span>
+        <input type="range" name="quality" min="40" max="100" value="<%= settings.quality %>" data-quality>
+        <small class="muted"><%= __('80 — хороший баланс: на глаз почти без потерь, файлы в 2–4 раза меньше.') %></small>
+      </label>
+      <div class="field">
+        <span><%= __('PNG') %></span>
+        <div class="pill-radio">
+          <% [['auto', 'Что меньше'], ['lossless', 'Без потерь'], ['lossy', 'С потерями']].forEach(function (o) { %>
+            <label><input type="radio" name="png" value="<%= o[0] %>" <%= settings.png === o[0] ? 'checked' : '' %>><span><%= __(o[1]) %></span></label>
+          <% }) %>
+        </div>
+      </div>
+      <div><button class="btn btn-primary"><%- icon('check') %><%= __('Сохранить') %></button></div>
+    </form>
+  </section>
+</div>
+<script>
+  (function () {
+    var range = document.querySelector('[data-quality]');
+    if (range) range.addEventListener('input', function () { document.querySelector('[data-quality-value]').textContent = range.value; });
+    var bar = document.querySelector('[data-bulk-progress]');
+    var poll = function () {
+      fetch('/admin/images/status?stats=1', { headers: { Accept: 'application/json' } }).then(function (r) { return r.json(); }).then(function (d) {
+        var b = d.bulk;
+        bar.hidden = !b.running && !b.total;
+        bar.querySelector('.upload-progress-fill').style.width = (b.total ? Math.round(b.done / b.total * 100) : 0) + '%';
+        bar.querySelector('[data-bulk-label]').textContent = b.done + ' / ' + b.total;
+        if (b.running) setTimeout(poll, 800); else location.reload();
+      });
+    };
+    document.querySelectorAll('[data-bulk-form]').forEach(function (f) {
+      f.addEventListener('submit', function (e) {
+        e.preventDefault();
+        document.querySelectorAll('[data-bulk-form] button').forEach(function (b) { b.disabled = true; });
+        bar.hidden = false;
+        fetch(f.action, { method: 'POST', body: new URLSearchParams(new FormData(f)), headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json' } }).then(poll);
+      });
+    });
+    <% if (bulk.running) { %>poll();<% } %>
+  })();
+</script>
+<%- include('../partials/footer') %>

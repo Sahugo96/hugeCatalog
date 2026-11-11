@@ -5,5 +5,6 @@
   <a href="/admin/taxonomy" class="<%= currentPath.startsWith('/admin/taxonomy') ? 'active' : '' %>"><%- icon('layers') %><%= __('Жанры и теги') %></a>
   <a href="/admin/chat" class="<%= currentPath.startsWith('/admin/chat') ? 'active' : '' %>"><%- icon('chat') %><%= __('Чат') %></a>
   <a href="/admin/import" class="<%= currentPath.startsWith('/admin/import') ? 'active' : '' %>"><%- icon('upload') %><%= __('Импорт') %></a>
+  <% if (isAdmin) { %><a href="/admin/images" class="<%= currentPath.startsWith('/admin/images') ? 'active' : '' %>"><%- icon('layers') %><%= __('Изображения') %></a><% } %>
   <% if (isAdmin) { %><a href="/admin/users" class="<%= currentPath.startsWith('/admin/users') ? 'active' : '' %>"><%- icon('user') %><%= __('Пользователи') %></a><% } %>
 </nav>

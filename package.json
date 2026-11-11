@@ -13,13 +13,15 @@
     "seed:demo": "node --disable-warning=ExperimentalWarning --env-file-if-exists=.env scripts/seed-demo.js",
     "import": "node --disable-warning=ExperimentalWarning --env-file-if-exists=.env scripts/import.js",
     "admin:password": "node --disable-warning=ExperimentalWarning --env-file-if-exists=.env scripts/admin-password.js",
-    "test": "node --disable-warning=ExperimentalWarning --test test/*.test.js"
+    "test": "node --disable-warning=ExperimentalWarning --test test/*.test.js",
+    "images:webp": "node --disable-warning=ExperimentalWarning --env-file-if-exists=.env scripts/webp.js"
   },
   "license": "MIT",
   "dependencies": {
     "ejs": "^3.1.10",
     "express": "^5.3.0",
     "express-session": "^1.19.0",
-    "multer": "^2.5.0"
+    "multer": "^2.5.0",
+    "sharp": "^0.35.5"
   }
 }

@@ -56,6 +56,7 @@ function storeImage(file, subdir, baseName) {
   fs.mkdirSync(dir, { recursive: true });
   const name = `${baseName || crypto.randomBytes(8).toString('hex')}.${ext}`;
   fs.renameSync(file.path, path.join(dir, name));
+  require('./webp').afterUpload(path.join(dir, name)); // WebP-копия в фоне
   return `/uploads/${subdir}/${name}`;
 }
 
@@ -83,7 +84,10 @@ function copyPublic(publicPath, subdir) {
 function removePublic(publicPath) {
   if (!publicPath || !publicPath.startsWith('/uploads/')) return;
   const full = path.join(UPLOAD_DIR, publicPath.slice('/uploads/'.length));
-  if (full.startsWith(UPLOAD_DIR)) safeUnlink(full);
+  if (full.startsWith(UPLOAD_DIR)) {
+    safeUnlink(full);
+    safeUnlink(`${full}.webp`); // WebP-копия
+  }
 }
 
 function removeDir(subdir) {

@@ -76,6 +76,8 @@ function createApp() {
   });
 
   app.use('/static', express.static(path.join(ROOT, 'public'), { maxAge: '7d' }));
+  // Сжатые WebP-копии для браузеров, которые их поддерживают (см. src/webp.js).
+  app.use('/uploads', require('./webp').middleware);
   app.use('/uploads', express.static(UPLOAD_DIR, {
     maxAge: '30d',
     dotfiles: 'deny',

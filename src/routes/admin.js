@@ -9,6 +9,7 @@ const { requireStaff, requireAdmin, isAdmin } = require('../auth');
 const Chat = require('../services/chat');
 const N = require('../services/notify');
 const TI = require('../services/taxonomy-i18n');
+const webp = require('../webp');
 const { uniqueSlug, toInt, searchNormalize, escapeLike } = require('../util');
 
 const router = express.Router();
@@ -235,6 +236,43 @@ router.post('/chat/mute/:userId', (req, res) => {
     req.flash('success', hours ? `${target.username}: запрет писать на ${hours} ч.` : `${target.username}: ограничение снято.`);
   }
   res.redirect(backTo(req, '/admin/chat'));
+});
+
+/* ---------- Сжатие изображений в WebP (только админ) ---------- */
+
+router.get('/images', requireAdmin, async (req, res) => {
+  res.render('admin/images', {
+    title: 'Сжатие изображений',
+    available: webp.available(),
+    settings: webp.settings(),
+    stats: await webp.stats(),
+    bulk: webp.bulkState(),
+  });
+});
+
+router.post('/images/settings', requireAdmin, (req, res) => {
+  const before = webp.settings();
+  webp.saveSettings({ enabled: !!req.body.enabled, onUpload: !!req.body.on_upload, quality: req.body.quality, png: req.body.png });
+  const after = webp.settings();
+  const changed = before.quality !== after.quality || before.png !== after.png;
+  req.flash('success', changed ? 'Настройки сохранены. Чтобы применить новое качество к уже сжатым картинкам, нажмите «Пересоздать все».' : 'Настройки сохранены.');
+  res.redirect('/admin/images');
+});
+
+router.post('/images/convert', requireAdmin, async (req, res) => {
+  await webp.startBulk({ force: req.body.force === '1' });
+  if (req.xhr) return res.json(webp.bulkState());
+  res.redirect('/admin/images');
+});
+
+router.get('/images/status', requireAdmin, async (req, res) => {
+  res.json({ bulk: webp.bulkState(), stats: req.query.stats ? await webp.stats() : null });
+});
+
+router.post('/images/delete', requireAdmin, async (req, res) => {
+  const n = await webp.deleteAll();
+  req.flash('success', `Удалено WebP-копий: ${n}. Оригиналы не тронуты.`);
+  res.redirect('/admin/images');
 });
 
 /* ---------- Пользователи (только админ) ---------- */

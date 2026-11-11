@@ -773,6 +773,7 @@ body.reader-page { background: var(--bg); }
 .dash-card strong { font-size: 2rem; font-weight: 850; }
 .dash-card span { color: var(--muted); }
 .dash-card.attention { border-color: var(--warn); background: var(--warn-soft); }
+.dash-card.good { border-color: var(--include); background: var(--include-soft); }
 a.dash-card:hover { border-color: var(--accent); color: var(--text); }
 .toolbar-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
 .mod-list { display: flex; flex-direction: column; gap: 12px; }
