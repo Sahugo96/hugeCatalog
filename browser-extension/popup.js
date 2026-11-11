@@ -66,15 +66,18 @@
       ['Серия', it.series],
       ['Глава', it.chapter.number + (it.chapter.title ? ' — ' + it.chapter.title : '')],
       ['Язык', LANG_NAMES[it.language] || it.language],
-      ['Автор', it.authors.join(', ') + (it.circle ? ' (' + it.circle + ')' : '')],
+      ['Авторы', it.authors.join(', ') || '—'],
       ['Перевод', it.translator || '—'],
       ['Страниц', it.pages || '—'],
-      ['Теги', it.tags.join(', ') || '—'],
+      ['Теги (' + it.tags.length + ')', it.tags.map(function (t) { return t.name_en || t.name; }).join(', ') || '—'],
     ];
+    // Все поля исходной страницы как есть — чтобы было видно, что ничего не потерялось.
+    Object.keys(it.source_fields || {}).forEach(function (k) {
+      rows.push(['· ' + k, it.source_fields[k].join(', ')]);
+    });
     $('summary').innerHTML = rows.map(function (r) { return '<dt>' + esc(r[0]) + '</dt><dd>' + esc(r[1]) + '</dd>'; }).join('');
     $('summary').hidden = false;
     var warns = [];
-    if (it.tags_unmapped.length) warns.push('Теги без соответствия в каталоге (не импортируются): ' + it.tags_unmapped.join(', '));
     if (!it.cover_url) warns.push('Обложка не найдена — загрузите её вручную после импорта.');
     $('warn').textContent = warns.join(' ');
     $('warn').hidden = !warns.length;

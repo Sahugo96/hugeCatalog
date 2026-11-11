@@ -42,6 +42,13 @@ function asList(v) {
   return (Array.isArray(v) ? v : String(v).split(/[,;\n]/)).map((x) => String(x).trim()).filter(Boolean);
 }
 
+/** Список жанров/тегов: строки и объекты { name, name_en, group } сохраняются как есть. */
+function itemList(v) {
+  if (v === undefined || v === null || v === '') return [];
+  if (!Array.isArray(v)) return asList(v);
+  return v.filter((x) => x !== null && x !== undefined && x !== '');
+}
+
 /** Скачивает обложку по ссылке и сохраняет как загруженный файл. */
 async function downloadCover(url) {
   let u;
@@ -124,8 +131,18 @@ function linkSeries(key, workId, entry) {
  */
 async function importWorks(input, options = {}) {
   const items = Array.isArray(input) ? input : [input];
-  const genres = new Map(q('SELECT id, name FROM genres').all().map((g) => [searchNormalize(g.name), g.id]));
-  const tags = new Map(q('SELECT id, name FROM tags').all().map((t) => [searchNormalize(t.name), t.id]));
+  // Поиск существующих жанров/тегов и по русскому названию, и по английскому (поле «English» в админке).
+  const index = (table) => {
+    const byName = new Map();
+    const byEn = new Map();
+    q(`SELECT id, name, name_en FROM ${table}`).all().forEach((r) => {
+      byName.set(searchNormalize(r.name), r.id);
+      if (r.name_en) byEn.set(searchNormalize(r.name_en), r.id);
+    });
+    return { byName, byEn };
+  };
+  const genres = index('genres');
+  const tags = index('tags');
   const groups = new Map(); // ключ group -> id первого произведения
   const report = [];
 
@@ -176,20 +193,33 @@ async function importWorks(input, options = {}) {
         continue;
       }
 
-      const resolve = (names, map, kind, table) => names.map((name) => {
-        const key = searchNormalize(name);
-        if (map.has(key)) return map.get(key);
+      /*
+       * Жанр/тег — строка («Милфы») или объект { name, name_en, group }:
+       * name — русское название (может отсутствовать), name_en — оригинал с сайта-источника.
+       * Ищем по name, затем по name_en; если не нашли — создаём (с name_en и группой).
+       */
+      const resolve = (items, idx, kind, table) => [...new Set(items.map((item) => {
+        const obj = item && typeof item === 'object' ? item : { name: item };
+        const ru = String(obj.name || '').trim().slice(0, 60);
+        const en = String(obj.name_en || '').trim().slice(0, 60);
+        const label = ru || en;
+        if (!label) return null;
+        const found = (ru && (idx.byName.get(searchNormalize(ru)) || idx.byEn.get(searchNormalize(ru))))
+          || (en && (idx.byEn.get(searchNormalize(en)) || idx.byName.get(searchNormalize(en))));
+        if (found) return found;
         if (!options.createMissing) {
-          entry.messages.push(`${kind} «${name}» не найден — пропущен`);
+          entry.messages.push(`${kind} «${label}» не найден — пропущен`);
           return null;
         }
+        const group = C.TAG_GROUPS.includes(obj.group) ? obj.group : 'Прочее';
         const id = Number((table === 'tags'
-          ? q('INSERT INTO tags (name, slug, tag_group) VALUES (?, ?, ?)').run(name, uniqueSlug(db, 'tags', name), 'Прочее')
-          : q('INSERT INTO genres (name, slug) VALUES (?, ?)').run(name, uniqueSlug(db, 'genres', name))).lastInsertRowid);
-        map.set(key, id);
-        entry.messages.push(`${kind} «${name}» создан`);
+          ? q('INSERT INTO tags (name, slug, tag_group, name_en) VALUES (?, ?, ?, ?)').run(label, uniqueSlug(db, 'tags', label), group, en || null)
+          : q('INSERT INTO genres (name, slug, name_en) VALUES (?, ?, ?)').run(label, uniqueSlug(db, 'genres', label), en || null)).lastInsertRowid);
+        idx.byName.set(searchNormalize(label), id);
+        if (en) idx.byEn.set(searchNormalize(en), id);
+        entry.messages.push(`${kind} «${label}» создан`);
         return id;
-      }).filter(Boolean);
+      }).filter(Boolean))];
 
       const body = {
         title: raw.title,
@@ -202,8 +232,8 @@ async function importWorks(input, options = {}) {
         year: raw.year,
         story_authors: asList(raw.authors).join(', '),
         artists: asList(raw.artists).join(', '),
-        genres: resolve(asList(raw.genres), genres, 'Жанр', 'genres'),
-        tags: resolve(asList(raw.tags), tags, 'Тег', 'tags'),
+        genres: resolve(itemList(raw.genres), genres, 'Жанр', 'genres'),
+        tags: resolve(itemList(raw.tags), tags, 'Тег', 'tags'),
       };
       const { data, errors } = W.validateWorkInput(body);
       if (errors.length) throw new Error(errors.join(' '));

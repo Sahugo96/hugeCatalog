@@ -43,3 +43,20 @@ test('импорт серии: главы одного языка — одно �
   assert.strictEqual(W.getChapters(ru.id, 'ASC', { includeEmpty: true }).length, 2);
   assert.strictEqual(W.getWorkById(ru.id).chapters_count, 0);
 });
+
+test('теги-объекты: совпадение по английскому названию, новые создаются с полем English и группой', async () => {
+  const r = await importWorks({
+    ...base, series: 'Tag Series', title: 'Tag Series', language: 'en', chapter: 1,
+    tags: [
+      { name: 'Full color', name_en: 'Full color', group: 'Прочее' }, // уже есть «Цветная» с English = Full color
+      { name: 'Gyaru-oh', name_en: 'Gyaru-oh', group: 'Прочее' }, // новый
+      { name: 'Asuka', name_en: 'Asuka', group: 'Персонажи' }, // новый персонаж
+    ],
+  }, { skipCovers: true, createMissing: true });
+  assert.strictEqual(r[0].status, 'created');
+  const w = W.getWorkBySlug(r[0].slug);
+  assert.deepStrictEqual(w.tags.map((t) => t.name).sort(), ['Asuka', 'Gyaru-oh', 'Цветная']);
+  const gyaru = q(`SELECT name_en, tag_group FROM tags WHERE name = 'Gyaru-oh'`).get();
+  assert.deepStrictEqual({ ...gyaru }, { name_en: 'Gyaru-oh', tag_group: 'Прочее' });
+  assert.strictEqual(q(`SELECT tag_group FROM tags WHERE name = 'Asuka'`).get().tag_group, 'Персонажи');
+});
