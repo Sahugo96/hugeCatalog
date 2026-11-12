@@ -7,7 +7,7 @@
 
   // Ссылка без одного значения фильтра — для чипов «активные фильтры».
   var baseQuery = {};
-  ['q','genre','genre_ex','genre_mode','tag','tag_ex','tag_mode','type','type_ex','lang','lang_ex','age','age_ex','status','status_ex','author','author_ex','team','year_from','year_to','ch_from','ch_to','sort','dir'].forEach(function (k) {
+  ['q','genre','genre_ex','genre_mode','tag','tag_ex','tag_mode','type','type_ex','lang','lang_ex','age','age_ex','status','status_ex','format','format_ex','author','author_ex','team','year_from','year_to','ch_from','ch_to','sort','dir'].forEach(function (k) {
     var v = f[k]; if (v !== null && v !== '' && !(Array.isArray(v) && !v.length)) baseQuery[k] = v;
   });
   if (baseQuery.genre_mode === 'all') delete baseQuery.genre_mode;
@@ -28,6 +28,7 @@
   pushList('genre', function (v) { return __(nameOf(genres, v)); }, '{v}');
   pushList('tag', function (v) { return __(nameOf(allTags, v)); }, '#{v}');
   pushList('status', function (v) { return labelOf(C.STATUSES, v); }, '{v}');
+  pushList('format', function (v) { return labelOf(C.FORMATS, v); }, '{v}');
   pushList('lang', function (v) { return labelOf(C.LANGUAGES, v); }, 'Язык: {v}');
   pushList('age', function (v) { return v; }, 'Возраст: {v}');
   pushList('author', function (v) { return nameOf(selectedAuthors, v); }, 'Автор: {v}');
@@ -101,6 +102,11 @@
             </details>
           <% }) %>
         </div>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-title"><%= __('Формат') %></div>
+        <div class="tri-list"><% C.FORMATS.forEach(function (o) { %><%- tri('format', o.value, o.label) %><% }) %></div>
       </div>
 
       <div class="filter-group">

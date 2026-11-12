@@ -773,6 +773,22 @@ body.reader-page { background: var(--bg); }
 .dash-card strong { font-size: 2rem; font-weight: 850; }
 .dash-card span { color: var(--muted); }
 .dash-card.attention { border-color: var(--warn); background: var(--warn-soft); }
+/* Формат публикации: главы / сингл */
+.format-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.format-option { display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); background: var(--bg-elev); }
+a.format-option[href]:hover { border-color: var(--accent); color: var(--text); }
+.format-option.current { border-color: var(--accent); background: var(--accent-soft); cursor: default; }
+.format-option.current strong::after { content: " ✓"; color: var(--accent); }
+.format-plan { display: flex; flex-direction: column; gap: 12px; }
+.format-keep, .format-remove { display: flex; gap: 12px; padding: 12px 14px; border-radius: var(--radius-sm); }
+.format-keep { background: var(--include-soft); }
+.format-keep > .icon { color: var(--include); }
+.format-remove { background: var(--exclude-soft); }
+.format-remove > .icon { color: var(--exclude); }
+.format-remove ul { margin: 6px 0 0; padding-left: 18px; }
+.confirm-check { padding: 10px 12px; border: 1px dashed var(--exclude); border-radius: var(--radius-sm); }
+.single-gallery { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+@media (max-width: 720px) { .format-switch { grid-template-columns: 1fr; } }
 .dash-card.good { border-color: var(--include); background: var(--include-soft); }
 a.dash-card:hover { border-color: var(--accent); color: var(--text); }
 .toolbar-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }

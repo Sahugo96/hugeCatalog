@@ -64,7 +64,7 @@
     var rows = [
       ['Название', it.title],
       ['Серия', it.series],
-      ['Глава', it.chapter.number + (it.chapter.title ? ' — ' + it.chapter.title : '')],
+      it.format === 'single' ? ['Формат', 'Сингл (без глав)'] : ['Глава', it.chapter.number + (it.chapter.title ? ' — ' + it.chapter.title : '')],
       ['Язык', LANG_NAMES[it.language] || it.language],
       ['Авторы', it.authors.join(', ') || '—'],
       ['Перевод', it.translator || '—'],

@@ -66,9 +66,10 @@
     if (!settingsPanel.hidden && !e.target.closest('[data-settings-panel]')) settingsPanel.hidden = true;
   });
 
-  document.querySelector('[data-chapter-select]').addEventListener('change', function (e) {
-    window.location = e.target.value;
-  });
+  var chapterSelect = document.querySelector('[data-chapter-select]'); // у сингла списка глав нет
+  if (chapterSelect) {
+    chapterSelect.addEventListener('change', function (e) { window.location = e.target.value; });
+  }
 
   // Помечаем загруженные картинки (убираем плейсхолдер).
   $$('img', reader).forEach(function (img) {

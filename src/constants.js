@@ -53,6 +53,11 @@ const SORTS = [
   { value: 'chapters', label: 'По количеству глав' },
 ];
 
+const FORMATS = [
+  { value: 'chapters', label: 'По главам' },
+  { value: 'single', label: 'Сингл' },
+];
+
 const TAG_GROUPS = ['Сюжет', 'Рисовка', 'Персонажи', 'Сеттинг', 'Пародия', 'Прочее'];
 
 const ROLES = [
@@ -67,6 +72,7 @@ function labelOf(list, value) {
 }
 
 module.exports = {
+  FORMATS,
   TYPES,
   STATUSES,
   LANGUAGES,

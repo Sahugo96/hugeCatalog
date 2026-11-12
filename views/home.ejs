@@ -17,7 +17,7 @@
             </div>
             <div class="row-gap">
               <a href="/title/<%= w.slug %>" class="btn btn-primary"><%- icon('book') %><%= __('Читать') %></a>
-              <span class="hero-stats muted"><%- icon('eye', 'tiny') %><%= util.compactNumber(w.views) %> <%- icon('heart', 'tiny') %><%= util.compactNumber(w.likes_count) %> · <%= w.chapters_count %> <%= __('гл.') %></span>
+              <span class="hero-stats muted"><%- icon('eye', 'tiny') %><%= util.compactNumber(w.views) %> <%- icon('heart', 'tiny') %><%= util.compactNumber(w.likes_count) %> · <%= w.is_single ? __('сингл') : w.chapters_count + ' ' + __('гл.') %></span>
             </div>
           </div>
         </div>
@@ -80,7 +80,12 @@
                   <span class="update-badges"><%- flag(w.language) %><span class="badge badge-soft"><%= labelOf(C.TYPES, w.type) %></span></span>
                 </div>
                 <ul class="update-chapters">
-                  <% w.recentChapters.forEach(function (c) { %>
+                  <% if (w.is_single && w.recentChapters[0]) { var g = w.recentChapters[0]; %>
+                    <li>
+                      <a href="/title/<%= w.slug %>/chapter/<%= g.id %>"><%= __('Сингл') %> · <%= __('{n} стр.', { n: w.pages_total }) %></a>
+                      <span class="muted nowrap"><%= util.timeAgo(g.created_at) %></span>
+                    </li>
+                  <% } else w.recentChapters.forEach(function (c) { %>
                     <li>
                       <a href="/title/<%= w.slug %>/chapter/<%= c.id %>">
                         <% if (c.volume) { %><%= __('Том') %> <%= c.volume %> <% } %><%= __('Глава') %> <%= util.formatChapterNumber(c.number) %><% if (c.title) { %> <span class="muted">— <%= c.title %></span><% } %>

@@ -10,15 +10,21 @@
     <a href="/title/<%= w.slug %>" class="icon-btn" aria-label="<%= __('К описанию тайтла') %>" title="<%= __('К тайтлу') %>"><%- icon('arrowLeft') %></a>
     <div class="reader-titles">
       <a href="/title/<%= w.slug %>" class="reader-work"><%= w.title %></a>
+      <% if (work.is_single) { %>
+      <span class="reader-select muted"><%= __('Сингл') %> · <%= __('{n} стр.', { n: pages.length }) %></span>
+      <% } else { %>
       <select class="reader-select" data-chapter-select aria-label="<%= __('Выбор главы') %>">
         <% chapters.slice().reverse().forEach(function (c) { %>
           <option value="/title/<%= w.slug %>/chapter/<%= c.id %>" <%= c.id === chapter.id ? 'selected' : '' %>><%= chLabel(c) %></option>
         <% }) %>
       </select>
+      <% } %>
     </div>
     <div class="reader-nav">
+      <% if (!work.is_single) { %>
       <a class="icon-btn <%= prev ? '' : 'disabled' %>" <% if (prev) { %>href="/title/<%= w.slug %>/chapter/<%= prev.id %>"<% } %> aria-label="<%= __('Предыдущая глава') %>" title="<%= __('Предыдущая глава') %>"><%- icon('chevronLeft') %></a>
       <a class="icon-btn <%= next ? '' : 'disabled' %>" <% if (next) { %>href="/title/<%= w.slug %>/chapter/<%= next.id %>"<% } %> aria-label="<%= __('Следующая глава') %>" title="<%= __('Следующая глава') %>"><%- icon('chevronRight') %></a>
+      <% } %>
       <button class="icon-btn" data-reader-settings aria-label="<%= __('Настройки чтения') %>" title="<%= __('Настройки') %>"><%- icon('settings') %></button>
       <button class="icon-btn theme-toggle" data-theme-toggle aria-label="<%= __('Переключить тему') %>">
         <span class="theme-icon-light"><%- icon('sun') %></span><span class="theme-icon-dark"><%- icon('moon') %></span>
@@ -69,7 +75,7 @@
   </div>
 
   <section class="reader-end container narrow">
-    <p class="muted"><%= __('Вы дочитали') %> <%= chLabel(chapter) %><% if (chapter.team_name) { %> <%= __('· перевод:') %> <a href="/team/<%= chapter.team_slug %>"><%= chapter.team_name %></a><% } %></p>
+    <p class="muted"><%= __('Вы дочитали') %> <%= work.is_single ? '«' + w.title + '»' : chLabel(chapter) %><% if (chapter.team_name) { %> <%= __('· перевод:') %> <a href="/team/<%= chapter.team_slug %>"><%= chapter.team_name %></a><% } %></p>
     <div class="row-gap center">
       <% if (prev) { %><a class="btn btn-ghost" href="/title/<%= w.slug %>/chapter/<%= prev.id %>"><%- icon('chevronLeft') %><%= __('Предыдущая') %></a><% } %>
       <% if (next) { %>

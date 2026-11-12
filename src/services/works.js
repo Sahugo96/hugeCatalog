@@ -7,7 +7,8 @@ const { sameGroupIds } = require('./versions');
 
 /** Поля для карточек произведений. */
 const CARD = `w.id, w.slug, w.title, w.cover, w.type, w.status, w.year, w.language, w.age_rating,
-  w.views, w.likes_count, w.favs_count, w.published_at, w.last_chapter_at,
+  w.views, w.likes_count, w.favs_count, w.published_at, w.last_chapter_at, w.is_single,
+  (SELECT COALESCE(SUM(c.pages_count), 0) FROM chapters c WHERE c.work_id = w.id) AS pages_total,
   (SELECT COUNT(*) FROM chapters c WHERE c.work_id = w.id AND c.pages_count > 0) AS chapters_count`;
 
 const APPROVED = `w.moderation = 'approved'`;
@@ -44,7 +45,8 @@ function getTaxonomy(workId) {
 
 function getWork(where, value) {
   const work = q(`SELECT w.*, t.name AS team_name, t.slug AS team_slug, u.username AS uploader_name,
-      (SELECT COUNT(*) FROM chapters c WHERE c.work_id = w.id AND c.pages_count > 0) AS chapters_count
+      (SELECT COUNT(*) FROM chapters c WHERE c.work_id = w.id AND c.pages_count > 0) AS chapters_count,
+      (SELECT COALESCE(SUM(c.pages_count), 0) FROM chapters c WHERE c.work_id = w.id) AS pages_total
     FROM works w
     LEFT JOIN teams t ON t.id = w.team_id
     LEFT JOIN users u ON u.id = w.uploader_id
@@ -103,6 +105,7 @@ function validateWorkInput(body) {
     artists: splitNames(body.artists),
     genres: toArray(body.genres).map(Number).filter(Number.isFinite),
     tags: toArray(body.tags).map(Number).filter(Number.isFinite),
+    is_single: body.format === 'single' || body.is_single === true,
   };
   if (!data.title) errors.push('Укажите название.');
   if (!C.values(C.TYPES).includes(data.type)) errors.push('Выберите тип произведения.');
@@ -124,11 +127,12 @@ function saveWork(data, { id = null, teamId, uploaderId, moderation, cover } = {
     if (!workId) {
       const slug = uniqueSlug(db, 'works', data.title);
       const res = q(`INSERT INTO works (slug, title, alt_titles, description, cover, type, status, year, language, age_rating,
-          team_id, uploader_id, moderation, search_text, published_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+          team_id, uploader_id, moderation, search_text, published_at, is_single)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
         slug, data.title, data.alt_titles, data.description, cover || null, data.type, data.status, data.year,
         data.language, data.age_rating, teamId || null, uploaderId || null, moderation,
-        searchText, moderation === 'approved' ? new Date().toISOString().replace('T', ' ').slice(0, 19) : null
+        searchText, moderation === 'approved' ? new Date().toISOString().replace('T', ' ').slice(0, 19) : null,
+        data.is_single ? 1 : 0
       );
       workId = Number(res.lastInsertRowid);
     } else {
@@ -229,6 +233,8 @@ function parseFilters(query) {
     age: toArray(query.age),
     age_ex: toArray(query.age_ex),
     status: toArray(query.status),
+    format: toArray(query.format),
+    format_ex: toArray(query.format_ex),
     status_ex: toArray(query.status_ex),
     author: toArray(query.author),
     author_ex: toArray(query.author_ex),
@@ -246,7 +252,7 @@ function parseFilters(query) {
 
 function countActiveFilters(f) {
   const keys = ['genre', 'genre_ex', 'tag', 'tag_ex', 'type', 'type_ex', 'lang', 'lang_ex', 'age', 'age_ex',
-    'status', 'status_ex', 'author', 'author_ex', 'team'];
+    'status', 'status_ex', 'format', 'format_ex', 'author', 'author_ex', 'team'];
   let n = keys.reduce((s, k) => s + f[k].length, 0);
   ['year_from', 'year_to', 'ch_from', 'ch_to'].forEach((k) => { if (f[k] !== null) n++; });
   return n;
@@ -297,6 +303,7 @@ function searchCatalog(f, perPage = 30) {
   scalar('w.language', f.lang, f.lang_ex);
   scalar('w.age_rating', f.age, f.age_ex);
   scalar('w.status', f.status, f.status_ex);
+  scalar(`CASE WHEN w.is_single = 1 THEN 'single' ELSE 'chapters' END`, f.format, f.format_ex);
 
   if (f.team.length) {
     where.push(`w.team_id IN (SELECT id FROM teams WHERE slug IN (${placeholders(f.team)}))`);
@@ -536,6 +543,47 @@ function similarByPlot(workId, limit = 12) {
 
 /* ======================= Главы ======================= */
 
+/* ======================= Формат «Сингл» ======================= */
+
+/**
+ * У сингла нет глав для читателя: страницы хранятся в одной служебной главе (№1),
+ * а интерфейс показывает её как галерею произведения.
+ */
+function galleryChapter(workId) {
+  return q('SELECT * FROM chapters WHERE work_id = ? ORDER BY number ASC, id ASC LIMIT 1').get(workId);
+}
+
+/**
+ * Что произойдёт при переводе в сингл: какая глава станет галереей и какие будут удалены.
+ * Возвращает { keep, remove: [...], removePages }.
+ */
+function singlePlan(workId) {
+  const chapters = q('SELECT id, number, title, volume, pages_count FROM chapters WHERE work_id = ? ORDER BY number ASC, id ASC').all(workId);
+  const [keep, ...remove] = chapters;
+  return { keep: keep || null, remove, removePages: remove.reduce((n, c) => n + c.pages_count, 0) };
+}
+
+/**
+ * Переключает формат. В сингл: первая глава становится галереей (номер 1, без тома и названия),
+ * остальные главы удаляются вместе с файлами. В главы: галерея становится «Главой 1».
+ */
+function setFormat(workId, single) {
+  const { removeDir } = require('../upload');
+  return transaction(() => {
+    if (!single) {
+      q('UPDATE works SET is_single = 0 WHERE id = ?').run(workId);
+      return { removed: [] };
+    }
+    const plan = singlePlan(workId);
+    plan.remove.forEach((c) => q('DELETE FROM chapters WHERE id = ?').run(c.id));
+    if (plan.keep) q(`UPDATE chapters SET number = 1, volume = NULL, title = '' WHERE id = ?`).run(plan.keep.id);
+    q('UPDATE works SET is_single = 1 WHERE id = ?').run(workId);
+    refreshLastChapter(workId);
+    plan.remove.forEach((c) => removeDir(`chapters/${c.id}`));
+    return { removed: plan.remove };
+  });
+}
+
 /**
  * Полностью удаляет произведение: запись, главы, страницы, лайки, избранное, историю,
  * файлы обложки и страниц; распускает связку языковых версий, если в ней остаётся одна.
@@ -589,5 +637,8 @@ module.exports = {
   bumpTextIndex,
   refreshLastChapter,
   deleteWork,
+  galleryChapter,
+  singlePlan,
+  setFormat,
   tokenize,
 };

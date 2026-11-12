@@ -207,6 +207,9 @@ function extractGallery(pageUrl) {
 
   var seriesName = orig.name || parts[0].trim();
   var number = tr && tr.number !== null ? tr.number : orig.number;
+  // Сингл (ваншот): номера в названии нет и сайт не помечает галерею как часть серии.
+  var multiWork = entries.some(function (e) { return /multi-work series|story arc/i.test(e.name); });
+  var single = number === null && !multiWork;
   var title = (language === 'ru' || language === 'uk') && tr && tr.name ? sentenceCase(tr.name) : seriesName;
   var alt = [];
   [seriesName, tr && tr.name ? sentenceCase(tr.name) : ''].forEach(function (a) { if (a && a !== title && alt.indexOf(a) === -1) alt.push(a); });
@@ -218,10 +221,12 @@ function extractGallery(pageUrl) {
       title: title,
       alt_titles: alt,
       series: seriesName,
+      format: single ? 'single' : 'chapters',
+      // Для сингла глава — лишь подсказка: если на сайте эта серия уже ведётся по главам, импорт добавит её главой.
       chapter: { number: number === null ? 1 : number, title: (tr && tr.sub) || orig.sub || '' },
       description: '',
       type: TYPES[category] || 'other',
-      status: number !== null ? 'ongoing' : 'completed',
+      status: single ? 'completed' : 'ongoing',
       language: language,
       age_rating: '18+',
       authors: authorNames,

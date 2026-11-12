@@ -154,7 +154,10 @@ async function importWorks(input, options = {}) {
 
       const language = pick(C.LANGUAGES, raw.language);
       const seriesKey = raw.series ? slugify(raw.series) : null;
-      const chapter = chapterOf(raw);
+      // Похоже на сингл, но серия уже ведётся по главам (например, другая языковая версия) — значит, это глава.
+      const seriesHasChapters = seriesKey && q('SELECT 1 FROM works WHERE import_key = ? AND is_single = 0').get(seriesKey);
+      const single = raw.format === 'single' && !seriesHasChapters;
+      const chapter = single ? null : chapterOf(raw); // у сингла нет глав
       const getCover = async () => {
         if (!raw.cover_url || options.skipCovers) return null;
         try {
@@ -173,7 +176,7 @@ async function importWorks(input, options = {}) {
           entry.title = existing.title;
           const added = chapter ? addChapterSkeleton(existing.id, chapter, raw.translator, options.uploaderId, entry) : false;
           if (added) entry.messages.unshift(`Глава ${chapter.number} добавлена в «${existing.title}»`);
-          else if (!chapter) entry.messages.push('уже есть в базе');
+          else if (!chapter) entry.messages.push(single ? 'сингл уже есть в базе' : 'уже есть в базе');
           if (!existing.cover) {
             const cover = await getCover();
             if (cover) q('UPDATE works SET cover = ? WHERE id = ?').run(cover, existing.id);
@@ -234,7 +237,9 @@ async function importWorks(input, options = {}) {
         artists: asList(raw.artists).join(', '),
         genres: resolve(itemList(raw.genres), genres, 'Жанр', 'genres'),
         tags: resolve(itemList(raw.tags), tags, 'Тег', 'tags'),
+        format: single ? 'single' : 'chapters',
       };
+      if (raw.format === 'single' && !single) entry.messages.push('серия уже ведётся по главам — добавлено как глава');
       const { data, errors } = W.validateWorkInput(body);
       if (errors.length) throw new Error(errors.join(' '));
 

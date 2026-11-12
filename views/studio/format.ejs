@@ -1,0 +1,49 @@
+<%- include('../partials/header') %>
+<div class="container narrow page-pad">
+  <div class="breadcrumbs"><a href="/studio"><%= __('Студия') %></a> / <a href="/studio/works/<%= work.id %>"><%= work.title %></a> / <span><%= __('Формат публикации') %></span></div>
+  <h1><%= __(to === 'single' ? 'Перевести в сингл' : 'Перевести на главы') %></h1>
+  <% if (error) { %><div class="notice notice-error"><%- icon('info') %><div><%= __(error) %></div></div><% } %>
+
+  <form method="post" action="/studio/works/<%= work.id %>/format" class="form panel">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <input type="hidden" name="to" value="<%= to %>">
+
+    <% if (to === 'chapters') { %>
+      <p><%= __('Произведение будет выходить по главам. Текущая галерея станет «Главой 1», после неё можно добавлять новые главы. Ничего не удаляется.') %></p>
+    <% } else if (!plan.keep) { %>
+      <p><%= __('Глав пока нет — произведение просто станет синглом, страницы можно будет загрузить одной галереей.') %></p>
+    <% } else { %>
+      <p><%= __('У сингла нет глав — только одна галерея страниц.') %></p>
+      <div class="format-plan">
+        <div class="format-keep">
+          <%- icon('check') %>
+          <div>
+            <strong><%= __('Станет галереей произведения') %></strong>
+            <div><%= __('Глава {n}', { n: util.formatChapterNumber(plan.keep.number) }) %><%= plan.keep.title ? ' — ' + plan.keep.title : '' %> · <%= __('{n} стр.', { n: plan.keep.pages_count }) %></div>
+          </div>
+        </div>
+        <% if (plan.remove.length) { %>
+          <div class="format-remove">
+            <%- icon('trash') %>
+            <div>
+              <strong><%= __('Будут удалены безвозвратно ({n} гл., {p} стр.)', { n: plan.remove.length, p: plan.removePages }) %></strong>
+              <ul>
+                <% plan.remove.forEach(function (c) { %><li><%= __('Глава {n}', { n: util.formatChapterNumber(c.number) }) %><%= c.title ? ' — ' + c.title : '' %> · <%= __('{n} стр.', { n: c.pages_count }) %></li><% }) %>
+              </ul>
+            </div>
+          </div>
+          <label class="check confirm-check">
+            <input type="checkbox" name="confirm" value="1" required>
+            <span><%= __('Понимаю: глава {n} станет галереей, остальные главы и их страницы будут удалены без возможности восстановления.', { n: util.formatChapterNumber(plan.keep.number) }) %></span>
+          </label>
+        <% } %>
+      </div>
+    <% } %>
+
+    <div class="form-footer">
+      <a href="/studio/works/<%= work.id %>" class="btn btn-ghost"><%= __('Отмена') %></a>
+      <button class="btn <%= to === 'single' && plan.remove.length ? 'btn-danger' : 'btn-primary' %>" type="submit"><%- icon('check') %><%= __(to === 'single' ? 'Сделать синглом' : 'Перевести на главы') %></button>
+    </div>
+  </form>
+</div>
+<%- include('../partials/footer') %>

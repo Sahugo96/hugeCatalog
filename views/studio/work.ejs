@@ -6,13 +6,17 @@
     <% if (w.cover) { %><img class="studio-cover" src="<%= w.cover %>" alt=""><% } %>
     <div class="grow">
       <h1><%= w.title %></h1>
-      <p class="muted"><%= labelOf(C.TYPES, w.type) %><%= w.year ? ' · ' + w.year : '' %> · <%= labelOf(C.LANGUAGES, w.language) %> · <%= w.age_rating %><%= w.team_name ? ' · ' + w.team_name : '' %></p>
+      <p class="muted"><% if (w.is_single) { %><span class="badge badge-soft"><%= __('Сингл') %></span> <% } %><%= labelOf(C.TYPES, w.type) %><%= w.year ? ' · ' + w.year : '' %> · <%= labelOf(C.LANGUAGES, w.language) %> · <%= w.age_rating %><%= w.team_name ? ' · ' + w.team_name : '' %></p>
       <p>
         <span class="status status-<%= w.moderation %>"><%= __({ pending: 'на модерации', approved: 'опубликован', rejected: 'отклонён' }[w.moderation]) %></span>
         <% if (w.moderation === 'rejected') { %><span class="small"><%= __('Причина:') %> <%= w.reject_reason %><%= __('. Исправьте данные и сохраните — тайтл снова уйдёт на проверку.') %></span><% } %>
       </p>
       <div class="row-gap">
-        <a class="btn btn-primary btn-sm" href="/studio/works/<%= w.id %>/chapters/new"><%- icon('upload') %><%= __('Загрузить главу') %></a>
+        <% if (w.is_single) { %>
+          <a class="btn btn-primary btn-sm" href="/studio/works/<%= w.id %>/pages"><%- icon('upload') %><%= __(chapters.length ? 'Заменить страницы' : 'Загрузить страницы') %></a>
+        <% } else { %>
+          <a class="btn btn-primary btn-sm" href="/studio/works/<%= w.id %>/chapters/new"><%- icon('upload') %><%= __('Загрузить главу') %></a>
+        <% } %>
         <a class="btn btn-ghost btn-sm" href="/studio/works/<%= w.id %>/edit"><%- icon('edit') %><%= __('Редактировать') %></a>
         <a class="btn btn-ghost btn-sm" href="/title/<%= w.slug %>"><%- icon('eye') %><%= __('Страница тайтла') %></a>
         <form method="post" action="/studio/works/<%= w.id %>/delete" data-confirm="<%= __('Удалить тайтл «{title}» со всеми главами? Это действие нельзя отменить.', { title: w.title }) %>">
@@ -63,6 +67,37 @@
     </form>
   </section>
 
+  <% if (isAdmin) { %>
+    <section class="section panel format-panel">
+      <div class="section-head"><h2><%- icon('layers') %><%= __('Формат публикации') %></h2></div>
+      <div class="format-switch">
+        <a class="format-option <%= w.is_single ? '' : 'current' %>" <% if (w.is_single) { %>href="/studio/works/<%= w.id %>/format?to=chapters"<% } %>>
+          <strong><%= __('По главам') %></strong><span class="muted small"><%= __('Произведение делится на главы, у каждой свои страницы') %></span>
+        </a>
+        <a class="format-option <%= w.is_single ? 'current' : '' %>" <% if (!w.is_single) { %>href="/studio/works/<%= w.id %>/format?to=single"<% } %>>
+          <strong><%= __('Сингл') %></strong><span class="muted small"><%= __('Ваншот: без глав, сразу галерея страниц') %></span>
+        </a>
+      </div>
+    </section>
+  <% } %>
+
+  <% if (w.is_single) { %>
+  <section class="section" id="chapters">
+    <% var gallery = chapters[0]; %>
+    <div class="section-head"><h2><%- icon('book') %><%= __('Страницы') %> (<%= gallery ? gallery.pages_count : 0 %>)</h2></div>
+    <% if (gallery && gallery.pages_count) { %>
+      <div class="panel single-gallery">
+        <span><%= __('Галерея загружена: {n} стр.', { n: gallery.pages_count }) %> · <%= util.formatDate(gallery.created_at) %><%= gallery.team_name ? ' · ' + gallery.team_name : '' %></span>
+        <div class="row-gap">
+          <a class="btn btn-ghost btn-sm" href="/title/<%= w.slug %>/chapter/<%= gallery.id %>"><%- icon('eye') %><%= __('Открыть в читалке') %></a>
+          <a class="btn btn-ghost btn-sm" href="/studio/chapters/<%= gallery.id %>/edit"><%- icon('edit') %><%= __('Заменить страницы') %></a>
+        </div>
+      </div>
+    <% } else { %>
+      <div class="empty empty-lg"><%- icon('upload') %><p><%= __('Страниц пока нет — сингл скрыт от читателей, пока их не загрузят.') %></p><a class="btn btn-primary" href="/studio/works/<%= w.id %>/pages"><%= __('Загрузить страницы') %></a></div>
+    <% } %>
+  </section>
+  <% } else { %>
   <section class="section" id="chapters">
     <div class="section-head"><h2><%- icon('list') %><%= __('Главы (') %><%= chapters.length %>)</h2></div>
     <% if (chapters.length) { %>
@@ -93,5 +128,6 @@
       <div class="empty empty-lg"><%- icon('upload') %><p><%= __('Глав пока нет.') %></p><a class="btn btn-primary" href="/studio/works/<%= w.id %>/chapters/new"><%= __('Загрузить первую главу') %></a></div>
     <% } %>
   </section>
+  <% } %>
 </div>
 <%- include('../partials/footer') %>

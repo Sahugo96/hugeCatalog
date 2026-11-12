@@ -6,7 +6,8 @@ const W = require('../services/works');
 const V = require('../services/versions');
 const N = require('../services/notify');
 const C = require('../constants');
-const { requireAuth, verifyCsrf, isStaff, canEditWork, teamRole } = require('../auth');
+const { requireAuth, requireAdmin, verifyCsrf, isStaff, canEditWork, teamRole } = require('../auth');
+const Chat = require('../services/chat');
 const { coverUpload, pagesUpload, storeImage, copyPublic, removePublic, removeDir, cleanupTmp, naturalCompare, detectImageExt } = require('../upload');
 const { toInt, searchNormalize, escapeLike } = require('../util');
 
@@ -98,6 +99,7 @@ function versionPrefill(source) {
     genres: source.genres.map((g) => g.id),
     tags: source.tags.map((t) => t.id),
     link_to: source.id,
+    format: source.is_single ? 'single' : 'chapters',
   };
 }
 
@@ -298,8 +300,49 @@ function storePages(chapterId, files) {
   q('UPDATE chapters SET pages_count = ? WHERE id = ?').run(stored.length, chapterId);
 }
 
+/* ---------- Сингл: страницы произведения (одна галерея без глав) ---------- */
+
+/** У сингла одна галерея: если она есть — редактируем её, иначе — создаём. */
+router.get('/works/:id/pages', loadEditableWork, (req, res) => {
+  const work = req.work;
+  const gallery = W.galleryChapter(work.id);
+  res.redirect(gallery ? `/studio/chapters/${gallery.id}/edit` : `/studio/works/${work.id}/chapters/new`);
+});
+
+/** Смена формата (главы ↔ сингл) — только администратор. */
+router.get('/works/:id/format', requireAdmin, loadEditableWork, (req, res) => {
+  const work = req.work;
+  const to = req.query.to === 'single' ? 'single' : 'chapters';
+  res.render('studio/format', { title: `Формат: ${work.title}`, work, to, plan: W.singlePlan(work.id), error: null });
+});
+
+router.post('/works/:id/format', requireAdmin, loadEditableWork, (req, res) => {
+  const work = req.work;
+  const toSingle = req.body.to === 'single';
+  const plan = W.singlePlan(work.id);
+  if (toSingle && plan.remove.length && req.body.confirm !== '1') {
+    return res.status(400).render('studio/format', {
+      title: `Формат: ${work.title}`, work, to: 'single', plan,
+      error: 'Подтвердите, что понимаете: остальные главы будут удалены безвозвратно.',
+    });
+  }
+  const { removed } = W.setFormat(work.id, toSingle);
+  if (toSingle) {
+    Chat.log(req.user.id, 'set_single', `work:${work.id}`, removed.length ? `удалены главы: ${removed.map((c) => c.number).join(', ')}` : '');
+    req.flash('success', removed.length
+      ? `«${work.title}» теперь сингл. Глава ${plan.keep.number} стала галереей, удалено глав: ${removed.length}.`
+      : `«${work.title}» теперь сингл.`);
+  } else {
+    Chat.log(req.user.id, 'set_chapters', `work:${work.id}`);
+    req.flash('success', `«${work.title}» теперь выходит по главам. Галерея стала главой 1.`);
+  }
+  res.redirect(`/studio/works/${work.id}`);
+});
+
 router.get('/works/:id/chapters/new', loadEditableWork, (req, res) => {
   const work = req.work;
+  const existingGallery = work.is_single && W.galleryChapter(work.id);
+  if (existingGallery) return res.redirect(`/studio/chapters/${existingGallery.id}/edit`);
   const last = q('SELECT MAX(number) AS n, MAX(volume) AS v FROM chapters WHERE work_id = ?').get(work.id);
   res.render('studio/chapter-form', {
     title: `Новая глава — ${work.title}`, work, chapter: null, errors: [],
@@ -310,6 +353,14 @@ router.get('/works/:id/chapters/new', loadEditableWork, (req, res) => {
 
 router.post('/works/:id/chapters/new', pagesUpload.array('pages', 500), verifyCsrf, loadEditableWork, (req, res) => {
   const work = req.work;
+  if (work.is_single) {
+    // У сингла одна галерея: номер, том и название не нужны.
+    if (W.galleryChapter(work.id)) {
+      cleanupTmp(req);
+      return finish(req, res, `/studio/works/${work.id}/pages`);
+    }
+    Object.assign(req.body, { number: '1', volume: '', title: '' });
+  }
   const { data, errors } = validateChapter(req.body, work.id);
   const teams = chapterTeams(req, work);
   let teamId = toInt(req.body.team_id) || work.team_id || null;
@@ -342,7 +393,7 @@ router.post('/works/:id/chapters/new', pagesUpload.array('pages', 500), verifyCs
       link: `/title/${work.slug}/chapter/${chapterId}`,
     }, { exclude: [req.user.id] });
   }
-  req.flash('success', `Глава ${data.number} загружена (${req.files.length} стр.).`);
+  req.flash('success', work.is_single ? `Страницы загружены (${req.files.length} стр.).` : `Глава ${data.number} загружена (${req.files.length} стр.).`);
   if (req.body.another) return finish(req, res, `/studio/works/${work.id}/chapters/new`);
   finish(req, res, `/studio/works/${work.id}#chapters`);
 });

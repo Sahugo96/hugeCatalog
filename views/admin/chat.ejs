@@ -115,7 +115,7 @@
       <table class="table">
         <thead><tr><th><%= __('Когда') %></th><th><%= __('Кто') %></th><th><%= __('Действие') %></th><th><%= __('Объект') %></th><th><%= __('Подробности') %></th></tr></thead>
         <tbody>
-          <% var actions = { view_conversation: 'просмотр переписки', search_messages: 'поиск по сообщениям', delete_message: 'удаление сообщения', dismiss_report: 'жалоба отклонена', mute: 'запрет писать', delete_work: 'удаление произведения', unmute: 'снят запрет' }; %>
+          <% var actions = { view_conversation: 'просмотр переписки', search_messages: 'поиск по сообщениям', delete_message: 'удаление сообщения', dismiss_report: 'жалоба отклонена', mute: 'запрет писать', delete_work: 'удаление произведения', set_single: 'перевод в сингл', set_chapters: 'перевод на главы', unmute: 'снят запрет' }; %>
           <% log.forEach(function (l) { %>
             <tr>
               <td class="nowrap small"><%= util.formatDate(l.created_at) %> <%= l.created_at.slice(11, 16) %></td>

@@ -78,6 +78,19 @@
 
     <div class="panel">
       <h2 class="h3"><%= __('Характеристики') %></h2>
+      <div class="field">
+        <span><%= __('Формат') %></span>
+        <% if (!work) { %>
+          <div class="pill-radio">
+            <label><input type="radio" name="format" value="chapters" <%= form.format !== 'single' ? 'checked' : '' %>><span><%= __('По главам') %></span></label>
+            <label><input type="radio" name="format" value="single" <%= form.format === 'single' ? 'checked' : '' %>><span><%= __('Сингл (ваншот)') %></span></label>
+          </div>
+          <small class="muted"><%= __('Сингл выходит одной галереей страниц, без глав.') %></small>
+        <% } else { %>
+          <div><span class="badge badge-soft"><%= __(work.is_single ? 'Сингл' : 'По главам') %></span>
+            <small class="muted"><%= __(isAdmin ? 'Сменить формат можно на странице произведения в студии.' : 'Сменить формат может администратор.') %></small></div>
+        <% } %>
+      </div>
       <div class="field-row cols-3">
         <label class="field">
           <span><%= __('Тип *') %></span>
