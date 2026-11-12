@@ -192,7 +192,7 @@ function extractGallery(pageUrl) {
     var thumb = document.querySelector('#thumbnail-gallery img, .single-thumb img');
     if (thumb) cover = (thumb.getAttribute('data-src') || thumb.getAttribute('src') || '').replace(/\/(\d+)t\.(\w+)(\?.*)?$/, '/$1.$2');
   }
-  
+
   var scans = [''];
   var scansGallery = (root || document).querySelectorAll('#thumbnail-gallery img');
   if (!scansGallery && scansGallery.length) {
@@ -229,6 +229,7 @@ function extractGallery(pageUrl) {
       genres: ['Хентай'],
       tags: tags,
       cover_url: cover,
+      scans_gallery: scans,
       translator: translator,
       circle: circle,
       pages: pagesField ? Number(fields[pagesField][0]) || null : null,
