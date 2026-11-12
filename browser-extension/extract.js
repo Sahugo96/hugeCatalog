@@ -183,7 +183,7 @@ function extractGallery(pageUrl) {
   });
   if (parodyFromTitle && parodyFromTitle.toLowerCase() !== 'original' && !of('parody').length) addTag(parodyFromTitle, 'Пародия');
 
-  /* ---------- Обложка ---------- */
+  /* ---------- Обложка + сканы ---------- */
 
   var cover = '';
   var coverImg = (root || document).querySelector('.main-cover img, #cover img');
@@ -191,6 +191,16 @@ function extractGallery(pageUrl) {
   if (!cover) {
     var thumb = document.querySelector('#thumbnail-gallery img, .single-thumb img');
     if (thumb) cover = (thumb.getAttribute('data-src') || thumb.getAttribute('src') || '').replace(/\/(\d+)t\.(\w+)(\?.*)?$/, '/$1.$2');
+  }
+  
+  var scans = [''];
+  var scansGallery = (root || document).querySelectorAll('#thumbnail-gallery img');
+  if (!scansGallery && scansGallery.length) {
+    scansGallery.forEach(element => {
+       var url = (element.getAttribute('data-src') || element.getAttribute('src') || '').replace(/\/(\d+)t\.(\w+)(\?.*)?$/, '/$1.$2');
+      
+        if (url) scans.push(url);
+    });
   }
 
   /* ---------- Запись для импорта ---------- */
