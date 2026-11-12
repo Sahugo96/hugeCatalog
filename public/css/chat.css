@@ -79,6 +79,8 @@
 .conv-head { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-bottom: 1px solid var(--border); }
 .conv-name { flex: 1; font-weight: 700; color: var(--text); }
 
+body.nav-open .chat-widget, body.filters-open .chat-widget { display: none; }
+
 @media (max-width: 720px) {
   .chat-widget { right: 14px; bottom: 14px; }
   .chat-fab { width: 50px; height: 50px; }

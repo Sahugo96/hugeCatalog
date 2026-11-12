@@ -37,7 +37,7 @@
 <a class="skip-link" href="#main"><%= __('Перейти к содержимому') %></a>
 <header class="site-header">
   <div class="container header-inner">
-    <button class="icon-btn only-mobile" data-toggle="nav" aria-label="<%= __('Меню') %>" aria-expanded="false"><%- icon('menu') %></button>
+    <button class="icon-btn only-mobile" data-toggle="nav" aria-label="<%= __('Меню') %>" aria-expanded="false" aria-controls="main-nav"><%- icon('menu', 'icon-open') %><%- icon('x', 'icon-close') %></button>
     <a href="/" class="logo" aria-label="<%= SITE_NAME %> — <%= __('на главную') %>">
       <span class="logo-mark">H</span><span class="logo-text"><%= SITE_NAME %></span>
     </a>

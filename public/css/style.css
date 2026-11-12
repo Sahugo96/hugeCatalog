@@ -835,16 +835,23 @@ body.only-missing .tax-group:not(:has(.is-missing)) { display: none; }
 @media (max-width: 960px) {
   .only-mobile { display: inline-flex !important; }
   .only-mobile-flex { display: inline-flex !important; }
+  /* backdrop-filter делает шапку контейнером для position: fixed — выезжающее меню обрезалось бы её высотой */
+  .site-header { background: var(--bg-elev); backdrop-filter: none; -webkit-backdrop-filter: none; }
+  body.nav-open .site-header { z-index: 80; } /* шапка и меню — над затемнением */
   .main-nav {
-    position: fixed; top: 0; left: 0; bottom: 0; z-index: 70; width: 280px; flex-direction: column; align-items: stretch;
-    padding: 76px 14px 20px; background: var(--bg-elev); border-right: 1px solid var(--border);
-    transform: translateX(-100%); transition: transform .25s ease;
+    position: fixed; top: var(--header-h); left: 0; bottom: 0; z-index: 70; width: min(300px, 86vw);
+    flex-direction: column; align-items: stretch; gap: 2px; overflow-y: auto;
+    padding: 12px; background: var(--bg-elev); border-right: 1px solid var(--border);
+    transform: translateX(-105%); visibility: hidden; transition: transform .25s ease, visibility .25s;
   }
-  .main-nav a { padding: 12px 14px; font-size: 1rem; }
-  .main-nav a .icon { display: inline; }
+  .main-nav a, .main-nav a.nav-icon-only { display: flex; align-items: center; gap: 12px; padding: 12px 14px; font-size: 1rem; border-radius: var(--radius-sm); }
+  .main-nav a .icon, .main-nav a.nav-icon-only .icon.dice { display: inline; width: 20px; height: 20px; }
   .nav-mobile-text { display: inline; }
-  body.nav-open .main-nav { transform: none; box-shadow: var(--shadow-lg); }
-  body.nav-open .nav-backdrop { display: block; position: fixed; inset: 0; z-index: 65; background: rgba(0, 0, 0, .45); }
+  body.nav-open .main-nav { transform: none; visibility: visible; box-shadow: var(--shadow-lg); }
+  body.nav-open .nav-backdrop { display: block; position: fixed; inset: var(--header-h) 0 0 0; z-index: 65; background: rgba(0, 0, 0, .45); }
+  [data-toggle="nav"] .icon-close { display: none; }
+  body.nav-open [data-toggle="nav"] .icon-open { display: none; }
+  body.nav-open [data-toggle="nav"] .icon-close { display: inline; }
   .header-search { display: none; position: absolute; left: 12px; right: 12px; top: calc(var(--header-h) - 2px); max-width: none; margin: 0; }
   body.search-open .header-search { display: block; }
   .header-actions { margin-left: auto; }
