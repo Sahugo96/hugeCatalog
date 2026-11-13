@@ -147,7 +147,8 @@
   <div class="tabs" data-tabs>
     <div class="tab-list" role="tablist">
       <% if (!w.is_single) { %><button role="tab" class="tab active" data-tab="chapters" aria-selected="true"><%- icon('list') %><%= __('Главы') %> <span class="count-badge"><%= chapters.length %></span></button><% } %>
-      <button role="tab" class="tab <%= w.is_single ? 'active' : '' %>" data-tab="similar" aria-selected="<%= !!w.is_single %>"><%- icon('sparkles') %><%= __('Похожие') %></button>
+      <% if (w.is_single) { %><button role="tab" class="tab active" data-tab="gallery" aria-selected="true"><%- icon('book') %><%= __('Галерея') %> <span class="count-badge"><%= galleryPages.length %></span></button><% } %>
+      <button role="tab" class="tab" data-tab="similar" aria-selected="false"><%- icon('sparkles') %><%= __('Похожие') %></button>
     </div>
 
     <% if (!w.is_single) { %>
@@ -184,7 +185,23 @@
     </section>
 
     <% } %>
-    <section class="tab-panel <%= w.is_single ? 'active' : '' %>" data-panel="similar" role="tabpanel" <%= w.is_single ? '' : 'hidden' %>>
+    <% if (w.is_single) { %>
+    <section class="tab-panel active" data-panel="gallery" id="gallery" role="tabpanel">
+      <% if (galleryPages.length) { %>
+        <div class="gallery-grid <%= adult ? 'is-adult' : '' %>">
+          <% galleryPages.forEach(function (p) { %>
+            <a class="gallery-thumb" href="/title/<%= w.slug %>/chapter/<%= firstChapter.id %>?page=<%= p.idx %>" title="<%= __('Страница {n}', { n: p.idx }) %>">
+              <img src="<%= p.path %>?thumb=1" alt="<%= __('Страница {n}', { n: p.idx }) %>" loading="lazy" decoding="async" width="320" height="455">
+              <span class="gallery-num"><%= p.idx %></span>
+            </a>
+          <% }) %>
+        </div>
+      <% } else { %>
+        <div class="empty"><%= __('Страниц пока нет') %></div>
+      <% } %>
+    </section>
+    <% } %>
+    <section class="tab-panel" data-panel="similar" role="tabpanel" hidden>
       <div class="subtabs" data-subtabs>
         <button class="pill active" data-subtab="taxonomy"><%= __('По жанрам и тегам') %></button>
         <button class="pill" data-subtab="plot"><%= __('По сюжету') %></button>

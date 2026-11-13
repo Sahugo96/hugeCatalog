@@ -145,6 +145,55 @@ function afterUpload(file) {
 const CACHE = 'public, max-age=2592000';
 const CSP = "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; sandbox";
 
+/* ---------- Миниатюры для галереи: /uploads/...jpg?thumb=1 → «имя.jpg.thumb.webp» шириной 320px ---------- */
+
+const THUMB_WIDTH = 320;
+const thumbPending = new Map();
+
+function thumbPathOf(file) {
+  return `${file}.thumb.webp`;
+}
+
+async function makeThumb(file) {
+  const out = thumbPathOf(file);
+  const [src, dst] = await Promise.all([exists(file), exists(out)]);
+  if (!src) return null;
+  if (dst && dst.mtimeMs >= src.mtimeMs) return out;
+  if (thumbPending.has(out)) return thumbPending.get(out);
+  const job = (async () => {
+    const buf = await sharp(await fsp.readFile(file), { failOn: 'none' }).rotate()
+      .resize({ width: THUMB_WIDTH, withoutEnlargement: true }).webp({ quality: 72, effort: 3 }).toBuffer();
+    await fsp.mkdir(TMP_DIR, { recursive: true });
+    const tmp = path.join(TMP_DIR, `${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2)}.thumb.webp`);
+    await fsp.writeFile(tmp, buf);
+    await fsp.rename(tmp, out);
+    return out;
+  })().finally(() => thumbPending.delete(out));
+  thumbPending.set(out, job);
+  return job;
+}
+
+function thumbMiddleware(req, res, next) {
+  if (req.query.thumb === undefined || (req.method !== 'GET' && req.method !== 'HEAD') || !CONVERTIBLE.test(req.path)) return next();
+  res.vary('Accept');
+  // Без поддержки WebP (очень старые браузеры) — отдаём оригинал.
+  if (!sharp || !(req.get('accept') || '').includes('image/webp')) return next();
+  let rel;
+  try {
+    rel = decodeURIComponent(req.path);
+  } catch {
+    return next();
+  }
+  const file = path.join(UPLOAD_DIR, rel);
+  if (!file.startsWith(UPLOAD_DIR + path.sep) || rel.includes('\0')) return next();
+  makeThumb(file).then((thumb) => {
+    if (!thumb) return next();
+    res.sendFile(thumb, {
+      headers: { 'Content-Type': 'image/webp', 'Cache-Control': CACHE, 'Content-Security-Policy': CSP, 'X-Content-Type-Options': 'nosniff' },
+    }, (err) => { if (err && !res.headersSent) next(); });
+  }, () => next());
+}
+
 function middleware(req, res, next) {
   if ((req.method !== 'GET' && req.method !== 'HEAD') || !CONVERTIBLE.test(req.path)) return next();
   res.vary('Accept'); // ответ зависит от того, умеет ли браузер WebP
@@ -252,6 +301,7 @@ module.exports = {
   enqueue,
   afterUpload,
   middleware,
+  thumbMiddleware,
   stats,
   startBulk,
   bulkState: () => ({ ...bulk }),

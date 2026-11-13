@@ -87,6 +87,7 @@ function removePublic(publicPath) {
   if (full.startsWith(UPLOAD_DIR)) {
     safeUnlink(full);
     safeUnlink(`${full}.webp`); // WebP-копия
+    safeUnlink(`${full}.thumb.webp`); // миниатюра галереи
   }
 }
 

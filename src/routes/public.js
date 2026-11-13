@@ -107,7 +107,12 @@ router.get('/title/:slug', (req, res, next) => {
     : null;
 
   const versions = getVersions(work.id, { onlyApproved: !canEditWork(req.user, work) });
+  // У сингла страницы показываются галереей прямо на странице произведения.
+  const galleryPages = work.is_single && firstChapter
+    ? q('SELECT idx, path FROM pages WHERE chapter_id = ? ORDER BY idx').all(firstChapter.id)
+    : [];
   res.render('title', {
+    galleryPages,
     versions,
     title: work.title,
     description: work.description.slice(0, 200),

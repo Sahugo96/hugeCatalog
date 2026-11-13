@@ -182,4 +182,20 @@
   }, { passive: true });
 
   applySettings();
+
+  // Открытие на конкретной странице: ?page=N (например, из галереи сингла).
+  var startPage = parseInt(new URLSearchParams(location.search).get('page'), 10);
+  if (startPage > 1 && startPage <= total) {
+    if (settings.mode === 'paged') showPage(startPage - 1);
+    else {
+      var target = pages[startPage - 1];
+      // Страницы выше ещё могут догружаться — прокручиваем, когда целевая займёт место.
+      var go = function () { target.scrollIntoView({ block: 'start' }); updateProgress(); };
+      var img = target.querySelector('img');
+      img.loading = 'eager';
+      for (var k = 0; k < startPage - 1; k++) pages[k].querySelector('img').loading = 'eager';
+      if (img.complete) go(); else img.addEventListener('load', go, { once: true });
+      go();
+    }
+  }
 })();

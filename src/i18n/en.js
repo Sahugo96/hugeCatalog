@@ -223,6 +223,7 @@ const EN = {
   'глава добавлена': 'chapter added',
   'удаление произведения': 'title deleted',
   'Сингл': 'Oneshot',
+  'Галерея': 'Gallery',
   'сингл': 'oneshot',
   'Сингл (ваншот)': 'Oneshot',
   'По главам': 'By chapters',

@@ -127,3 +127,31 @@ test('импорт сингла: без глав; если серия уже и�
   assert.ok(r2[0].messages.some((m) => /добавлено как глава/.test(m)));
   assert.strictEqual(q('SELECT title FROM chapters WHERE work_id = ?').get(w2.id).title, 'Sub');
 });
+
+test('галерея сингла: миниатюры на странице произведения ведут в читалку на нужную страницу', async (t) => {
+  const sharp = require('sharp');
+  const w = makeWork('Галерейный', { single: true });
+  const ch = Number(q('INSERT INTO chapters (work_id, number, pages_count) VALUES (?, 1, 3)').run(w.id).lastInsertRowid);
+  const dir = path.join(UPLOAD_DIR, 'chapters', String(ch));
+  fs.mkdirSync(dir, { recursive: true });
+  for (const n of [1, 2, 3]) {
+    await sharp({ create: { width: 900, height: 1300, channels: 3, background: '#88aacc' } }).jpeg().toFile(path.join(dir, `000${n}.jpg`));
+    q('INSERT INTO pages (chapter_id, idx, path) VALUES (?, ?, ?)').run(ch, n, `/uploads/chapters/${ch}/000${n}.jpg`);
+  }
+  W.refreshLastChapter(w.id);
+
+  const server = createApp().listen(0);
+  t.after(() => server.close());
+  const base = `http://127.0.0.1:${server.address().port}`;
+  const slug = W.getWorkById(w.id).slug;
+  const html = await (await fetch(`${base}/title/${slug}`)).text();
+  assert.match(html, /data-tab="gallery"/);
+  assert.strictEqual((html.match(/class="gallery-thumb"/g) || []).length, 3);
+  assert.match(html, new RegExp(`/title/${slug}/chapter/${ch}\\?page=2`));
+
+  const thumb = await fetch(`${base}/uploads/chapters/${ch}/0002.jpg?thumb=1`, { headers: { Accept: 'image/webp,*/*' } });
+  assert.strictEqual(thumb.headers.get('content-type'), 'image/webp');
+  const meta = await sharp(Buffer.from(await thumb.arrayBuffer())).metadata();
+  assert.strictEqual(meta.width, 320, 'миниатюра уменьшена');
+  assert.ok(fs.existsSync(path.join(dir, '0002.jpg.thumb.webp')), 'миниатюра закэширована на диске');
+});

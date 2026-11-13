@@ -612,6 +612,15 @@ html:not(.age-ok) .is-adult img, html:not(.age-ok) img.is-adult-img { filter: bl
 .tab:hover { color: var(--text); }
 .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
 .tab .icon { width: 18px; height: 18px; }
+/* Галерея сингла */
+.gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+.gallery-thumb { position: relative; display: block; aspect-ratio: 2 / 3; border-radius: var(--radius-xs); overflow: hidden; background: var(--bg-soft); box-shadow: var(--shadow-sm); }
+.gallery-thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform .25s ease; }
+.gallery-thumb:hover img { transform: scale(1.04); }
+.gallery-thumb:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.gallery-num { position: absolute; right: 6px; bottom: 6px; padding: 1px 7px; border-radius: 6px; background: rgba(12, 14, 20, .7); color: #fff; font-size: .75rem; font-weight: 700; }
+html:not(.age-ok) .gallery-grid.is-adult .gallery-thumb img { filter: blur(14px); } /* только 18+ до подтверждения возраста */
+@media (max-width: 720px) { .gallery-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; } }
 .chapters-toolbar { display: flex; gap: 10px; margin-bottom: 12px; }
 .chapter-list { list-style: none; margin: 0; padding: 0; background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
 .chapter-list li + li { border-top: 1px solid var(--border); }
