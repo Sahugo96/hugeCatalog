@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const multer = require('multer');
-const { UPLOAD_DIR } = require('./db');
+const { UPLOAD_DIR, q } = require('./db');
 
 const TMP_DIR = path.join(UPLOAD_DIR, '.tmp');
 fs.mkdirSync(TMP_DIR, { recursive: true });
@@ -93,7 +93,38 @@ function removePublic(publicPath) {
 
 function removeDir(subdir) {
   const full = path.join(UPLOAD_DIR, subdir);
-  if (full.startsWith(UPLOAD_DIR) && full !== UPLOAD_DIR) fs.rmSync(full, { recursive: true, force: true });
+  if (full.startsWith(UPLOAD_DIR + path.sep)) fs.rmSync(full, { recursive: true, force: true });
+}
+
+/** Папка произведения uploads/works/<slug> (имя очищается так же, как при импорте). */
+function workFolder(slug) {
+  return `works/${String(slug || 'work').replace(/[^a-z0-9_-]/gi, '_') || 'work'}`;
+}
+
+/** Пути всех страниц указанных глав — собрать ДО удаления строк из базы. */
+function chapterFilePaths(chapterIds) {
+  if (!chapterIds.length) return [];
+  return q(`SELECT path FROM pages WHERE chapter_id IN (${chapterIds.map(() => '?').join(',')})`).all(...chapterIds).map((r) => r.path);
+}
+
+/**
+ * Удаляет файлы страниц глав, где бы они ни лежали (вместе с WebP-копиями и миниатюрами),
+ * папки uploads/chapters/<id> и опустевшие после этого папки.
+ */
+function removeChapterFiles(chapterIds, paths) {
+  const dirs = new Set();
+  paths.forEach((p) => {
+    removePublic(p);
+    if (p.startsWith('/uploads/')) dirs.add(path.dirname(path.join(UPLOAD_DIR, p.slice('/uploads/'.length))));
+  });
+  chapterIds.forEach((id) => removeDir(`chapters/${id}`));
+  dirs.forEach((d) => {
+    try {
+      if (d.startsWith(UPLOAD_DIR + path.sep) && fs.readdirSync(d).length === 0) fs.rmdirSync(d);
+    } catch {
+      /* папки уже нет */
+    }
+  });
 }
 
 /** Очистка временных файлов, если обработчик упал до их перемещения. */
@@ -108,4 +139,4 @@ function cleanupTmp(req) {
 /** Естественная сортировка имён файлов: 2.jpg < 10.jpg */
 const naturalCompare = new Intl.Collator('en', { numeric: true, sensitivity: 'base' }).compare;
 
-module.exports = { coverUpload, pagesUpload, storeImage, copyPublic, removePublic, removeDir, cleanupTmp, naturalCompare, detectImageExt };
+module.exports = { coverUpload, pagesUpload, storeImage, copyPublic, removePublic, removeDir, workFolder, chapterFilePaths, removeChapterFiles, cleanupTmp, naturalCompare, detectImageExt };

@@ -8,7 +8,7 @@ const N = require('../services/notify');
 const C = require('../constants');
 const { requireAuth, requireAdmin, verifyCsrf, isStaff, canEditWork, teamRole } = require('../auth');
 const Chat = require('../services/chat');
-const { coverUpload, pagesUpload, storeImage, copyPublic, removePublic, removeDir, cleanupTmp, naturalCompare, detectImageExt } = require('../upload');
+const { coverUpload, pagesUpload, storeImage, copyPublic, removePublic, removeDir, chapterFilePaths, removeChapterFiles, cleanupTmp, naturalCompare, detectImageExt } = require('../upload');
 const { toInt, searchNormalize, escapeLike } = require('../util');
 
 const router = express.Router();
@@ -456,8 +456,9 @@ router.post('/chapters/:cid/edit', pagesUpload.array('pages', 500), verifyCsrf, 
 
 router.post('/chapters/:cid/delete', loadEditableChapter, (req, res) => {
   const { work, chapter } = req;
+  const pagePaths = chapterFilePaths([chapter.id]);
   q('DELETE FROM chapters WHERE id = ?').run(chapter.id);
-  removeDir(`chapters/${chapter.id}`);
+  removeChapterFiles([chapter.id], pagePaths);
   W.refreshLastChapter(work.id);
   req.flash('success', `Глава ${chapter.number} удалена.`);
   res.redirect(`/studio/works/${work.id}#chapters`);

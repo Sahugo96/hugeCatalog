@@ -99,3 +99,24 @@ test('английские названия жанров и тегов из ад
   const page = await (await admin.req('/admin/taxonomy')).text();
   assert.match(page, /без перевода: 1/, 'счётчик записей без перевода');
 });
+
+test('удаление произведения стирает всю папку works/<slug> и файлы страниц, где бы они ни лежали', () => {
+  const a = makeWork('Папочное');
+  const slug = W.getWorkById(a.id).slug;
+  const folder = path.join(UPLOAD_DIR, 'works', slug);
+  fs.mkdirSync(path.join(folder, 'gallery'), { recursive: true });
+  fs.writeFileSync(path.join(folder, 'gallery', '001.jpg'), 'x'); // файл, о котором база не знает
+  fs.writeFileSync(path.join(folder, 'gallery', '001.jpg.webp'), 'x');
+  // страница главы, лежащая вне uploads/chapters/<id>
+  const other = path.join(UPLOAD_DIR, 'elsewhere', 'p1.jpg');
+  fs.mkdirSync(path.dirname(other), { recursive: true });
+  fs.writeFileSync(other, 'x');
+  fs.writeFileSync(`${other}.thumb.webp`, 'x');
+  q('INSERT INTO pages (chapter_id, idx, path) VALUES (?, 2, ?)').run(a.ch, '/uploads/elsewhere/p1.jpg');
+
+  W.deleteWork({ id: a.id }); // только id — остальное функция берёт из базы
+  assert.ok(!fs.existsSync(folder), 'папка works/<slug> удалена целиком');
+  assert.ok(!fs.existsSync(other) && !fs.existsSync(`${other}.thumb.webp`), 'страница вне папки главы удалена вместе с миниатюрой');
+  assert.ok(!fs.existsSync(path.dirname(other)), 'опустевшая папка удалена');
+  assert.ok(!fs.existsSync(a.cover), 'обложка удалена');
+});

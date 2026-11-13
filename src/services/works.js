@@ -568,18 +568,20 @@ function singlePlan(workId) {
  * остальные главы удаляются вместе с файлами. В главы: галерея становится «Главой 1».
  */
 function setFormat(workId, single) {
-  const { removeDir } = require('../upload');
+  const { chapterFilePaths, removeChapterFiles } = require('../upload');
   return transaction(() => {
     if (!single) {
       q('UPDATE works SET is_single = 0 WHERE id = ?').run(workId);
       return { removed: [] };
     }
     const plan = singlePlan(workId);
+    const removeIds = plan.remove.map((c) => c.id);
+    const removePaths = chapterFilePaths(removeIds);
     plan.remove.forEach((c) => q('DELETE FROM chapters WHERE id = ?').run(c.id));
     if (plan.keep) q(`UPDATE chapters SET number = 1, volume = NULL, title = '' WHERE id = ?`).run(plan.keep.id);
     q('UPDATE works SET is_single = 1 WHERE id = ?').run(workId);
     refreshLastChapter(workId);
-    plan.remove.forEach((c) => removeDir(`chapters/${c.id}`));
+    removeChapterFiles(removeIds, removePaths);
     return { removed: plan.remove };
   });
 }
@@ -589,13 +591,17 @@ function setFormat(workId, single) {
  * файлы обложки и страниц; распускает связку языковых версий, если в ней остаётся одна.
  */
 function deleteWork(work) {
-  const { removeDir, removePublic } = require('../upload');
+  const { removeDir, removePublic, workFolder, chapterFilePaths, removeChapterFiles } = require('../upload');
   const { cleanupGroup } = require('./versions');
+  const row = q('SELECT slug, cover, group_id FROM works WHERE id = ?').get(work.id);
+  if (!row) return;
   const chapterIds = q('SELECT id FROM chapters WHERE work_id = ?').all(work.id).map((c) => c.id);
+  const pagePaths = chapterFilePaths(chapterIds); // собираем до удаления строк
   q('DELETE FROM works WHERE id = ?').run(work.id); // связанные строки удаляются каскадом
-  cleanupGroup(work.group_id);
-  chapterIds.forEach((id) => removeDir(`chapters/${id}`));
-  removePublic(work.cover);
+  cleanupGroup(row.group_id);
+  removeChapterFiles(chapterIds, pagePaths);
+  removePublic(row.cover);
+  removeDir(workFolder(row.slug)); // вся папка произведения uploads/works/<slug>
   q('DELETE FROM authors WHERE id NOT IN (SELECT author_id FROM work_authors)').run();
   bumpTextIndex();
 }
