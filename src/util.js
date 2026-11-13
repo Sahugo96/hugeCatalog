@@ -21,15 +21,19 @@ function slugify(input) {
   return s || 'item';
 }
 
-/** Уникальный slug для таблицы: добавляет -2, -3, ... при коллизии. */
-function uniqueSlug(db, table, base, excludeId = null) {
+/**
+ * Уникальный slug для таблицы: добавляет -2, -3, ... при коллизии.
+ * isTaken(slug) — необязательная доп. проверка (например, что на диске уже есть папка с таким именем).
+ */
+function uniqueSlug(db, table, base, excludeId = null, isTaken = null) {
   const root = slugify(base);
   let slug = root;
   let n = 2;
   const stmt = db.prepare(`SELECT id FROM ${table} WHERE slug = ?`);
   for (;;) {
     const row = stmt.get(slug);
-    if (!row || (excludeId && row.id === excludeId)) return slug;
+    const free = !row || (excludeId && row.id === excludeId);
+    if (free && !(isTaken && isTaken(slug))) return slug;
     slug = `${root}-${n++}`;
   }
 }

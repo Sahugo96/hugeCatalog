@@ -120,3 +120,13 @@ test('удаление произведения стирает всю папку
   assert.ok(!fs.existsSync(path.dirname(other)), 'опустевшая папка удалена');
   assert.ok(!fs.existsSync(a.cover), 'обложка удалена');
 });
+
+test('новое произведение не занимает оставшуюся на диске папку works/<slug>', () => {
+  const leftover = path.join(UPLOAD_DIR, 'works', 'sirota');
+  fs.mkdirSync(path.join(leftover, 'gallery'), { recursive: true });
+  fs.writeFileSync(path.join(leftover, 'gallery', '001.jpg'), 'x'); // осталось от удалённого произведения
+  const a = makeWork('Sirota');
+  assert.strictEqual(W.getWorkById(a.id).slug, 'sirota-2', 'slug с занятой папкой пропущен');
+  const b = makeWork('Sirota');
+  assert.strictEqual(W.getWorkById(b.id).slug, 'sirota-3', 'занятый в базе slug тоже пропущен');
+});

@@ -1,6 +1,8 @@
 'use strict';
 
-const { q, db, transaction } = require('../db');
+const fs = require('node:fs');
+const path = require('node:path');
+const { q, db, transaction, UPLOAD_DIR } = require('../db');
 const C = require('../constants');
 const { uniqueSlug, searchNormalize, escapeLike, today, toArray, toInt } = require('../util');
 const { sameGroupIds } = require('./versions');
@@ -125,7 +127,11 @@ function saveWork(data, { id = null, teamId, uploaderId, moderation, cover } = {
     const searchText = searchNormalize([data.title, data.alt_titles, ...data.story_authors, ...data.artists].join(' '));
     let workId = id;
     if (!workId) {
-      const slug = uniqueSlug(db, 'works', data.title);
+      // Пропускаем slug, если на диске осталась папка uploads/works/<slug> от удалённого произведения:
+      // иначе новое произведение получило бы чужие файлы.
+      const { workFolder } = require('../upload');
+      const folderTaken = (s) => fs.existsSync(path.join(UPLOAD_DIR, workFolder(s)));
+      const slug = uniqueSlug(db, 'works', data.title, null, folderTaken);
       const res = q(`INSERT INTO works (slug, title, alt_titles, description, cover, type, status, year, language, age_rating,
           team_id, uploader_id, moderation, search_text, published_at, is_single)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
