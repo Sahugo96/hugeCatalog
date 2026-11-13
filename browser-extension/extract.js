@@ -193,16 +193,14 @@ function extractGallery(pageUrl) {
     if (thumb) cover = (thumb.getAttribute('data-src') || thumb.getAttribute('src') || '').replace(/\/(\d+)t\.(\w+)(\?.*)?$/, '/$1.$2');
   }
 
-  var scans = [''];
-  var scansGallery = (root || document).querySelectorAll('#thumbnail-gallery img');
-  if (!scansGallery && scansGallery.length) {
-    scansGallery.forEach(element => {
-       var url = (element.getAttribute('data-src') || element.getAttribute('src') || '').replace(/\/(\d+)t\.(\w+)(\?.*)?$/, '/$1.$2');
-      
-        if (url) scans.push(url);
-    });
-  }
-
+  var scans = [];
+  var scansGallery = document.querySelectorAll('#thumbnail-gallery img');
+  scansGallery.forEach(element => {
+     var url = (element.getAttribute('data-src') || element.getAttribute('src') || '').replace(/\/(\d+)t\.(\w+)(\?.*)?$/, '/$1.$2');
+    
+      if (url) scans.push(url);
+  });
+  
   /* ---------- Запись для импорта ---------- */
 
   var seriesName = orig.name || parts[0].trim();
