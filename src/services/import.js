@@ -215,9 +215,9 @@ function addChapterSkeleton(workId, ch, translator, uploaderId, entry) {
     if (team) teamId = team.id;
     else entry.messages.push(`команда перевода «${translator}» не найдена на сайте`);
   }
-  q('INSERT INTO chapters (work_id, volume, number, title, team_id, uploader_id, pages_count) VALUES (?, ?, ?, ?, ?, ?, 0)')
+  const res = q('INSERT INTO chapters (work_id, volume, number, title, team_id, uploader_id, pages_count) VALUES (?, ?, ?, ?, ?, ?, 0)')
     .run(workId, ch.volume, ch.number, ch.title, teamId, uploaderId || null);
-  return true;
+  return Number(res.lastInsertRowid);
 }
 
 /** Связывает произведение с версиями той же серии на других языках. */
@@ -304,6 +304,11 @@ async function importWorks(input, options = {}) {
             try {
               const res = await downloadScans(scansInput, existing.slug, subdir);
               entry.messages.push(scanReportMessage(res));
+              if (res.stored.length) {
+                const ins = q('INSERT INTO pages (chapter_id, idx, path) VALUES (?, ?, ?)');
+                res.stored.forEach((p, i) => ins.run(added, i + 1, p));
+                q('UPDATE chapters SET pages_count = ? WHERE id = ?').run(res.stored.length, added);
+              }
               if (options.onScans) options.onScans({ workId: existing.id, slug: existing.slug, chapter, scans: res.stored });
             } catch (err) {
               entry.messages.push(`сканы: ${err.message}`);
@@ -393,16 +398,29 @@ async function importWorks(input, options = {}) {
       }
 
       /* ---------- Глава ---------- */
-      if (chapter && addChapterSkeleton(id, chapter, raw.translator, options.uploaderId, entry)) {
-        entry.messages.unshift(`Глава ${chapter.number} добавлена в «${data.title}»`);
+      let chapterId = null;
+      if (chapter) {
+        chapterId = addChapterSkeleton(id, chapter, raw.translator, options.uploaderId, entry);
+        if (chapterId) entry.messages.unshift(`Глава ${chapter.number} добавлена в «${data.title}»`);
+      } else if (single) {
+        // Для сингла создаём главу №1 как контейнер для галереи.
+        const res = q('INSERT INTO chapters (work_id, volume, number, title, team_id, uploader_id, pages_count) VALUES (?, NULL, 1, \'\', ?, ?, 0)')
+          .run(id, null, options.uploaderId || null);
+        chapterId = Number(res.lastInsertRowid);
       }
 
       /* ---------- Сканы → works/<slug>/gallery|chapter<N> ---------- */
-      if (wantsScans) {
+      if (wantsScans && chapterId) {
         const subdir = chapter ? `chapter${chapter.number}` : 'gallery';
         try {
           const res = await downloadScans(scansInput, entry.slug, subdir);
           entry.messages.push(scanReportMessage(res));
+          if (res.stored.length) {
+            const ins = q('INSERT INTO pages (chapter_id, idx, path) VALUES (?, ?, ?)');
+            res.stored.forEach((p, i) => ins.run(chapterId, i + 1, p));
+            q('UPDATE chapters SET pages_count = ? WHERE id = ?').run(res.stored.length, chapterId);
+            W.refreshLastChapter(id);
+          }
           if (options.onScans) options.onScans({ workId: id, slug: entry.slug, chapter, scans: res.stored });
         } catch (err) {
           entry.messages.push(`сканы: ${err.message}`);

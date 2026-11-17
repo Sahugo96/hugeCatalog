@@ -112,12 +112,16 @@ test('смена формата доступна только администр
   assert.strictEqual(res.status, 403);
 });
 
-test('импорт сингла: без глав; если серия уже идёт по главам — добавляется главой', async () => {
+test('импорт сингла: создаёт главу 1 для галереи; если серия уже идёт по главам — добавляется главой', async () => {
   const r1 = await importWorks({ title: 'Один выпуск', series: 'One Shot X', format: 'single', chapter: { number: 1 }, language: 'ru', type: 'doujinshi', authors: ['A'], genres: [q('SELECT name FROM genres LIMIT 1').get().name] }, { skipCovers: true });
   assert.strictEqual(r1[0].status, 'created');
   const w1 = W.getWorkBySlug(r1[0].slug);
   assert.strictEqual(w1.is_single, 1);
-  assert.strictEqual(q('SELECT COUNT(*) AS n FROM chapters WHERE work_id = ?').get(w1.id).n, 0, 'у сингла нет глав');
+  assert.strictEqual(q('SELECT COUNT(*) AS n FROM chapters WHERE work_id = ?').get(w1.id).n, 1, 'у сингла есть глава 1 для галереи');
+  const ch1 = q('SELECT number, title, volume FROM chapters WHERE work_id = ?').get(w1.id);
+  assert.strictEqual(ch1.number, 1);
+  assert.strictEqual(ch1.title, '');
+  assert.strictEqual(ch1.volume, null);
 
   const g = q('SELECT name FROM genres LIMIT 1').get().name;
   await importWorks({ title: 'Серия X', series: 'Series X', chapter: { number: 2 }, language: 'ru', type: 'manga', authors: ['A'], genres: [g] }, { skipCovers: true });
