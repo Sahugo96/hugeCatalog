@@ -1,11 +1,32 @@
-/* global extractGallery, chrome */
+/* global extractGallery, extractHentai2read, HC_TAGS_RU, chrome */
 (function () {
   'use strict';
 
   var $ = function (id) { return document.getElementById(id); };
   var LANG_NAMES = { ja: 'японский', en: 'английский', ru: 'русский', zh: 'китайский', ko: 'корейский', uk: 'украинский', es: 'испанский', fr: 'французский', de: 'немецкий', other: 'другой' };
-  var current = null;
+  var current = []; // записи импорта с открытой страницы (у hentai2read — по одной на главу)
   var text = '';
+
+  // Поддерживаемые сайты: проверка адреса страницы и функция разбора.
+  var SITES = [
+    {
+      test: /^https?:\/\/([a-z]+\.)?3hentai\.net\/d\/\d+/,
+      hint: '3hentai: страница галереи …/d/123456',
+      run: function (tabId) { return chrome.scripting.executeScript({ target: { tabId: tabId }, func: extractGallery }); },
+    },
+    {
+      test: /^https?:\/\/(www\.)?hentai2read\.com\/[^?#]+/,
+      hint: 'hentai2read: страница произведения',
+      run: function (tabId) {
+        return chrome.scripting.executeScript({ target: { tabId: tabId }, func: extractHentai2read, args: [HC_TAGS_RU] });
+      },
+    },
+  ];
+
+  // Одна и та же запись при повторном нажатии заменяется, а не дублируется.
+  function keyOf(it) {
+    return it.source_url + '|' + (it.format === 'chapters' && it.chapter ? it.chapter.number : '');
+  }
 
   function setStatus(msg, kind) {
     var el = $('status');
@@ -45,12 +66,13 @@
     $('collect-row').hidden = !st.collect;
     var payload;
     if (st.collect) {
-      var list = st.collected.filter(function (x) { return x.source_url !== current.source_url; }).concat([current]);
+      var keys = current.map(keyOf);
+      var list = st.collected.filter(function (x) { return keys.indexOf(keyOf(x)) === -1; }).concat(current);
       await chrome.storage.local.set({ collected: list });
       $('collect-count').textContent = 'В списке: ' + list.length;
       payload = list;
     } else {
-      payload = current;
+      payload = current.length === 1 ? current[0] : current;
     }
     text = JSON.stringify(payload, null, 2);
     $('json').textContent = text;
@@ -60,11 +82,21 @@
     setStatus(ok ? (st.collect ? 'Список скопирован в буфер обмена' : 'Скопировано в буфер обмена') : 'Не удалось скопировать — нажмите кнопку ниже', ok ? 'ok' : 'err');
   }
 
-  function showSummary(it) {
+  function chapterRow(items) {
+    var it = items[0];
+    if (it.format === 'single') return ['Формат', 'Сингл (без глав)'];
+    var withCh = items.filter(function (x) { return x.chapter; });
+    if (!withCh.length) return ['Главы', 'не найдены — импорт создаст произведение без глав'];
+    if (withCh.length === 1) return ['Глава', it.chapter.number + (it.chapter.title ? ' — ' + it.chapter.title : '')];
+    return ['Главы (' + withCh.length + ')', withCh.map(function (x) { return x.chapter.number; }).join(', ')];
+  }
+
+  function showSummary(items) {
+    var it = items[0];
     var rows = [
       ['Название', it.title],
       ['Серия', it.series],
-      it.format === 'single' ? ['Формат', 'Сингл (без глав)'] : ['Глава', it.chapter.number + (it.chapter.title ? ' — ' + it.chapter.title : '')],
+      chapterRow(items),
       ['Язык', LANG_NAMES[it.language] || it.language],
       ['Авторы', it.authors.join(', ') || '—'],
       ['Перевод', it.translator || '—'],
@@ -86,18 +118,20 @@
   async function run() {
     var tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     var tab = tabs[0];
-    if (!tab || !/^https?:\/\/([a-z]+\.)?3hentai\.net\/d\/\d+/.test(tab.url || '')) {
-      setStatus('Откройте страницу галереи 3hentai (…/d/123456) и нажмите на значок ещё раз.', 'err');
+    var site = tab && SITES.filter(function (s) { return s.test.test(tab.url || ''); })[0];
+    if (!site) {
+      setStatus('Откройте поддерживаемую страницу и нажмите на значок ещё раз: '
+        + SITES.map(function (s) { return s.hint; }).join('; ') + '.', 'err');
       return;
     }
     try {
-      var res = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: extractGallery });
+      var res = await site.run(tab.id);
       var out = res && res[0] && res[0].result;
       if (!out || out.error) {
         setStatus(out ? out.error : 'Не удалось прочитать страницу.', 'err');
         return;
       }
-      current = out.item;
+      current = out.items || [out.item];
       showSummary(current);
       await render();
     } catch (e) {
@@ -111,11 +145,11 @@
   });
   $('collect').addEventListener('change', async function (e) {
     await chrome.storage.local.set({ collect: e.target.checked });
-    if (current) render();
+    if (current.length) render();
   });
   $('clear').addEventListener('click', async function () {
     await chrome.storage.local.set({ collected: [] });
-    if (current) render();
+    if (current.length) render();
   });
 
   run();

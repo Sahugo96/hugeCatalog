@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "HugeCatalog: импорт с 3hentai",
-  "version": "1.0.0",
-  "description": "Копирует данные открытой галереи 3hentai в буфер обмена в формате импорта HugeCatalog.",
+  "name": "HugeCatalog: импорт",
+  "version": "1.1.0",
+  "description": "Копирует данные открытой страницы (3hentai, hentai2read) в буфер обмена в формате импорта HugeCatalog.",
   "action": {
     "default_title": "Скопировать для импорта в HugeCatalog",
     "default_popup": "popup.html",
